@@ -3,16 +3,27 @@ Original Pinball Compilation
 This project is planned to contain multiple pinball tables. As of this writing, only one is available. It is incomplete, but playable.
 
 Keyboard controls are as follows:
+
 Start - C
+
 Coin - V
+
 Left Flipper - F
+
 Right Flipper - J
+
 Plunger - M
+
 Left Nudge - D
+
 Right Nudge - K
+
 Front Nudge - Space
+
 Camera Pan - Numpad 8462
+
 Camera Zoom - +/-
+
 Camera Home - Numpad 5
 
 Table rules (Magical Robot):
