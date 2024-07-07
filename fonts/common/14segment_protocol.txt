@@ -1,0 +1,128 @@
+a b c d e f g1 g2 h i j k l m dot tail
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+f i
+
+a c d f g1 g2 i l
+c f j k
+
+i
+i m
+h k
+h i j k l m
+g1 g2 i l
+SUFFIX dot tail
+g1 g2
+SUFFIX dot
+j k
+a b c d e f j k
+b c
+a b d e g1 g2
+a b c d g1 g2
+b c f g1 g2
+a c d f g1 g2
+a c d e f g1 g2
+a b c
+a b c d e f g1 g2
+a b c d f g1 g2
+
+
+j m
+d g1 g2
+h k
+
+
+a b c e f g1 g2
+a b c d g2 i l
+a d e f
+a b c d i l
+a d e f g1
+a e f g1
+a c d e f g2
+b c e f g1 g2
+a d i l
+b c d e
+e f g1 j m
+d e f
+b c e f h j
+b c e f h m
+a b c d e f
+a b e f g1 g2
+a b c d e f m
+a b e f g1 g2 m
+a c d f g1 g2
+a i l
+b c d e f
+e f j k
+b c e f k m
+h j k m
+h j l
+a d j k
+a d e f
+h m
+a b c d
+b j
+d
+h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+g1 j m
+i l
+g2 h k
+

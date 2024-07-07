@@ -1,0 +1,315 @@
+LOAD:
+	BACKGROUND "graphics/test-bg.png"
+
+	INTEGER "temp_bool" 0
+	DOUBLE "temp_y" 0.0
+
+	TABLE 20.25 42.0 FALSE
+	TILT_BOB 6.0 30.0 -1.0 -1.0 -1.0 -1.0
+	INTEGER "playfield" -1
+	LAYER 0.0 0.0 20.25 42.0 0 0.0 40.136165 10.125 21.0 playfield
+	INTEGER "habitrail" -1
+	LAYER 0.0 0.0 20.25 42.0 GRADIENT_POLAR -30.0 0.0 8.859375 17.5 habitrail
+
+	INTEGER "layer1" -1
+	LOAD_SPRITESHEET "graphics/test-layer1.png" 648 1345 0.0 0.0 layer1
+	SPRITE layer1 playfield BELOW_BALL 0.0 0.0 -1
+	INTEGER "layer2" -1
+	LOAD_SPRITESHEET "graphics/test-layer2.png" 544 272 0.0 0.0 layer2
+	SPRITE layer2 habitrail BELOW_BALL 0.0 9.015625 -1
+
+	INTEGER "score" 0
+
+	INTEGER "font" -1
+	CREATE_FONT font
+	INTEGER "font_size" -1
+	LOAD_FONT_SIZE "fonts/24high12wide.png" "fonts/24high12wide_kerningdata.txt" font_size
+	ADD_FONT_SIZE font font_size
+
+	INTEGER "dmd" -1
+	INTEGER "dot" -1
+	LOAD_SPRITESHEET "graphics/dot.png" 4 4 0.0 0.0 dot
+	DOT_MATRIX_DISPLAY 96 32 255 128 0 dot dmd
+	INTEGER "backglass" -1
+	BACKGLASS -3.375 -27.0 27.0 27.0 backglass
+	ADD_DOT_MATRIX_DISPLAY backglass dmd 0.0 0.0
+	DESIGNATE_BACKGLASS backglass
+
+	INTEGER "spinner_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/spinner.png" 48 40 24.0 20.0 spinner_spritesheet
+	INTEGER "spinner_sprite" -1
+	SPRITE spinner_spritesheet playfield ABOVE_BALL 9.35 10.125 spinner_sprite
+	INTEGER "spinner_line" -1
+	LINE 7.95 10.125 10.75 10.125 spinner_line
+	INTEGER "spinner" -1
+	SPINNER spinner_line 0 -1.0 -1.0 -1.0 -1.0 spinner_sprite 32 spinner
+	INTEGER "left_spinner_post" -1
+	CIRCLE 7.95 10.125 0.25 left_spinner_post
+	INTEGER "right_spinner_post" -1
+	CIRCLE 10.75 10.125 0.25 right_spinner_post
+	INTEGER "spinner_posts" -1
+	COMPOSITE left_spinner_post right_spinner_post spinner_posts
+	RUBBER spinner_posts playfield
+
+	INTEGER "top_arc" -1
+	ARC 10.125 10.125 10.125 3.14159265 6.28318531 top_arc
+	INTEGER "left_wall" -1
+	LINE 0.0 10.125 0.0 38.0 left_wall
+	INTEGER "right_wall" -1
+	LINE 20.25 10.125 20.25 42.0 right_wall
+	INTEGER "floor" -1
+	LINE 0.0 38.0 18.25 41.0 floor
+	INTEGER "left_guide" -1
+	LINE 0.0 10.125 1.0 11.125 left_guide
+	INTEGER "left_guide_underside" -1
+	LINE 0.0 12.125 1.0 11.125 left_guide
+	INTEGER "right_guide" -1
+	LINE 18.25 10.125 17.25 11.125 right_guide
+	INTEGER "right_guide_underside" -1
+	LINE 18.25 12.125 17.25 11.125 right_guide
+	INTEGER "left_lower_guide" -1
+	LINE 0.0 22.125 1.0 24.125 left_lower_guide
+	INTEGER "left_lower_guide_underside" -1
+	LINE 0.0 26.125 1.0 24.125 left_lower_guide_underside
+	INTEGER "right_lower_guide" -1
+	LINE 18.25 22.125 17.25 24.125 right_lower_guide
+	INTEGER "right_lower_guide_underside" -1
+	LINE 18.25 26.125 17.25 24.125 right_lower_guide
+	INTEGER "plunger_lane_floor" -1
+	LINE 18.25 42.0 20.25 42.0 plunger_lane_floor
+	INTEGER "plunger_lane_wall" -1
+	LINE 18.25 10.125 18.25 39.0 plunger_lane_wall
+	INTEGER "outer_playfield" -1
+	COMPOSITE top_arc plunger_lane_wall outer_playfield
+	METAL outer_playfield playfield
+
+	INTEGER "habitrail_layer_portal_line" -1
+	LINE 0.0 17.5 3.0 17.5 habitrail_layer_portal_line
+	INTEGER "habitrail_layer_portal" -1
+	SWITCH habitrail_layer_portal_line playfield habitrail_layer_portal
+	LAYER_PORTAL habitrail_layer_portal_line habitrail
+	GATE habitrail_layer_portal_line -1
+
+	INTEGER "habitrail_reverse_layer_portal_line" -1
+	LINE 0.0 17.5 3.0 17.5 habitrail_reverse_layer_portal_line
+	INTEGER "habitrail_reverse_layer_portal" -1
+	SWITCH habitrail_reverse_layer_portal_line habitrail habitrail_reverse_layer_portal
+	LAYER_PORTAL habitrail_reverse_layer_portal_line playfield
+	GATE habitrail_reverse_layer_portal_line 1
+
+	INTEGER "habitrail_guard" -1
+	LINE 0.0 14.5 3.0 17.5 habitrail_guard
+	INTEGER "habitrail_guard_composite" -1
+	COMPOSITE habitrail_guard habitrail_guard habitrail_guard_composite
+	PLASTIC habitrail_guard_composite playfield
+
+	INTEGER "outer_habitrail" -1
+	ARC 8.484375 17.5 8.484375 3.14159265 6.28318531 outer_habitrail
+	INTEGER "inner_habitrail" -1
+	ARC 9.234375 17.5 6.234375 3.14159265 6.28318531 inner_habitrail
+	INTEGER "habitrail_composite" -1
+	COMPOSITE outer_habitrail inner_habitrail habitrail_composite
+	WIRE habitrail_composite habitrail
+
+	INTEGER "habitrail_end_portal_line" -1
+	LINE 15.46875 17.5 16.96875 17.5 habitrail_end_portal_line
+	INTEGER "habitrail_end_portal" -1
+	SWITCH habitrail_end_portal_line habitrail habitrail_end_portal
+	LAYER_PORTAL habitrail_end_portal_line playfield
+	GATE habitrail_end_portal_line 1
+
+	INTEGER "habitrail_switch_line" -1
+	LINE 16.21875 16.0 16.21875 17.5 habitrail_switch_line
+	INTEGER "habitrail_switch" -1
+	SWITCH habitrail_switch_line habitrail habitrail_switch
+
+	INTEGER "plunger_lane_left_corner" -1
+	LINE 18.25 42.0 18.25 41.0 plunger_lane_left_corner
+	WOOD plunger_lane_left_corner playfield
+
+	INTEGER "bumper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/bumper.png" 86 86 43.0 43.0 bumper_spritesheet	
+
+	INTEGER "left_bumper_sprite" -1
+	SPRITE bumper_spritesheet playfield ABOVE_BALL 3.5625 14.0 left_bumper_sprite
+	INTEGER "left_bumper" -1
+	CIRCLE 3.5625 14.0 1.0 left_bumper
+	METAL left_bumper playfield
+	SET_SENSITIVITY left_bumper 4.0
+
+	INTEGER "right_bumper_sprite" -1
+	SPRITE bumper_spritesheet playfield ABOVE_BALL 12.6875 17.5 right_bumper_sprite
+	INTEGER "right_bumper" -1
+	CIRCLE 12.6875 17.5 1.0 right_bumper
+	METAL right_bumper playfield
+	SET_SENSITIVITY right_bumper 4.0
+
+	INTEGER "left_slingshot" -1
+	LINE 4.5625 31.0 2.5625 27.0 left_slingshot
+	RUBBER_BAND left_slingshot playfield
+	SET_SENSITIVITY left_slingshot 4.75
+	INTEGER "left_slingshot_back" -1
+	LINE 2.5625 27.0 2.5625 30.0 left_slingshot_back
+	INTEGER "left_slingshot_bottom" -1
+	LINE 2.5625 30.0 4.5625 31.0 left_slingshot_bottom
+	INTEGER "left_slingshot_base" -1
+	COMPOSITE left_slingshot_back left_slingshot_bottom left_slingshot_base
+	RUBBER_BAND left_slingshot_base playfield
+
+	INTEGER "right_slingshot" -1
+	LINE 15.6875 27.0 13.6875 31.0 right_slingshot
+	RUBBER_BAND right_slingshot playfield
+	SET_SENSITIVITY right_slingshot 4.75
+	INTEGER "right_slingshot_back" -1
+	LINE 15.6875 27.0 15.6875 30.0 right_slingshot_back
+	INTEGER "right_slingshot_bottom" -1
+	LINE 15.6875 30.0 13.6875 31.0 right_slingshot_bottom
+	INTEGER "right_slingshot_base" -1
+	COMPOSITE right_slingshot_back right_slingshot_bottom right_slingshot_base
+	RUBBER_BAND right_slingshot_base playfield
+
+	INTEGER "left_inlane_vertical" -1
+	LINE 1.28125 27.0 1.28125 31.5 left_inlane_vertical
+	INTEGER "left_inlane_slope" -1
+	LINE 1.28125 31.5 5.23125 33.5 left_inlane_slope
+	INTEGER "left_inlane" -1
+	COMPOSITE left_inlane_vertical left_inlane_slope left_inlane
+	METAL left_inlane playfield
+
+	INTEGER "left_inlane_magnet" -1
+	MAGNET playfield 1.78125 26.0 0.0 1.53125 0.53125 FALSE left_inlane_magnet
+
+	INTEGER "right_inlane_vertical" -1
+	LINE 16.96875 27.0 16.96875 31.5 right_inlane_vertical
+	INTEGER "right_inlane_slope" -1
+	LINE 16.96875 31.5 12.96875 33.5 right_inlane_slope
+	INTEGER "right_inlane" -1
+	COMPOSITE right_inlane_vertical right_inlane_slope right_inlane
+	METAL right_inlane playfield
+
+	INTEGER "left_flipper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/left-flipper.png" 89 59 11.2 11.2 left_flipper_spritesheet
+	INTEGER "left_flipper_sprite" -1
+	SPRITE left_flipper_spritesheet playfield ABOVE_BALL 5.23125 33.9 left_flipper_sprite
+	INTEGER "left_flipper" -1
+	FLIPPER playfield 5.23125 33.9 0.52359877559 -0.78539816339 3.1 0.35 0.2 left_flipper
+	SYNC_SPRITE left_flipper_sprite left_flipper
+
+	INTEGER "right_flipper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/right-flipper.png" 89 59 77.8 11.2 right_flipper_spritesheet
+	INTEGER "right_flipper_sprite" -1
+	SPRITE right_flipper_spritesheet playfield ABOVE_BALL 5.23125 33.9 right_flipper_sprite
+	INTEGER "right_flipper" -1
+	FLIPPER playfield 12.96875 33.9 2.61799387799 0.78539816339 3.1 0.35 0.2 right_flipper
+	SYNC_SPRITE right_flipper_sprite right_flipper
+
+	INTEGER "center_post" -1
+	CIRCLE 9.1 36.45 0.25 center_post
+	RUBBER center_post playfield
+
+	INTEGER "plunger_line" -1
+	LINE 18.25 41.5 20.25 41.5 plunger_line
+	INTEGER "plunger" -1
+	MOBILE plunger_line 18.75 41.5 0.0 0.0 0.0 5.5 0.0 0.0 1.75 1.0 plunger
+	SET_MOBILE_SPRING_CONSTANT plunger 200.0
+	PLASTIC plunger playfield
+	INTEGER "plunger_lane_gate_out" -1
+	LINE 18.25 10.125 20.25 8.125 plunger_lane_gate_out
+	GATE plunger_lane_gate_out -1
+	METAL plunger_lane_gate_out playfield
+	INTEGER "plunger_lane_gate_in" -1
+	LINE 18.25 39.0 18.25 41.0 plunger_lane_gate_in
+	GATE plunger_lane_gate_in -1
+	METAL plunger_lane_gate_in playfield
+
+	INTEGER "ball_sprite" -1
+	LOAD_SPRITESHEET "graphics/common/ball.png" 34 34 17.0 17.0 ball_sprite
+	BALL 0 19.25 40.0 -1.0 -1.0 -1.0 TRUE TRUE ball_sprite -1 -1 -1
+
+	ARRAY "array" 3 0
+	SET_ARRAY_ELEMENT array 0 1
+
+	INTEGER "temp1" -1
+	INTEGER "temp2" -1
+	DOUBLE "nudge_x" 0.0
+	DOUBLE "nudge_y" 0.0
+BREAK
+INPUT_DOWN INPUT_PLUNGER:
+	SET_MOBILE_SPRING_CONSTANT plunger 0.0
+	SET_MOBILE_VELOCITY plunger 0.0 8.0
+BREAK
+INPUT_UP INPUT_PLUNGER:
+	SET_MOBILE_VELOCITY plunger 0.0 0.0
+	SET_MOBILE_SPRING_CONSTANT plunger 350.0
+BREAK
+'TODO analog plunger
+INPUT_DOWN INPUT_LEFT_FLIPPER:
+	SET_MOBILE_ANGULAR_ACCELERATION left_flipper -1040.0
+BREAK
+INPUT_UP INPUT_LEFT_FLIPPER:
+	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
+BREAK
+INPUT_DOWN INPUT_RIGHT_FLIPPER:
+	GET_ARRAY_ELEMENT array 2 temp1
+	GET_ARRAY_ELEMENT array 1 temp2
+	SET_ARRAY_ELEMENT array 2 temp2
+	GET_ARRAY_ELEMENT array 0 temp2
+	SET_ARRAY_ELEMENT array 1 temp2
+	SET_ARRAY_ELEMENT array 0 temp1
+	SET_MOBILE_ANGULAR_ACCELERATION right_flipper 1040.0
+BREAK
+INPUT_UP INPUT_RIGHT_FLIPPER:
+	SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
+BREAK
+INPUT_DOWN INPUT_NUDGE:
+	GET_ANALOG_INPUT ANALOG_NUDGE_X nudge_x
+	GET_ANALOG_INPUT ANALOG_NUDGE_Y nudge_y
+	NUDGE nudge_x nudge_y 0.15
+BREAK
+INPUT_UP INPUT_NUDGE:
+	HALT_NUDGE
+BREAK
+INPUT_DOWN INPUT_LEFT_SECONDARY:
+	MAGNET_POWER left_inlane_magnet 512.0
+BREAK
+INPUT_UP INPUT_LEFT_SECONDARY:
+	MAGNET_POWER left_inlane_magnet 0.0
+BREAK
+COLLISION left_bumper:
+	BUMPER_ACTION 0 left_bumper 0.1 34.0
+	LOOP_SPRITE_ANIMATION left_bumper_sprite 0 1 1 15.0 1
+	ADD score 10 score
+BREAK
+COLLISION right_bumper:
+	BUMPER_ACTION 0 right_bumper 0.1 34.0
+	LOOP_SPRITE_ANIMATION right_bumper_sprite 0 1 1 15.0 1
+	ADD score 10 score
+BREAK
+COLLISION left_slingshot:
+	SLINGSHOT_ACTION 0 left_slingshot 0.5 32.0 0.5
+	ADD score 1 score
+BREAK
+COLLISION right_slingshot:
+	SLINGSHOT_ACTION 0 right_slingshot 0.5 32.0 0.5
+	ADD score 1 score
+BREAK
+SPIN_CW 0:
+	ADD score 2 score
+BREAK
+TILT_BOB_CONTACT 0:
+	PRINT "Tilt"
+BREAK
+SWITCH_DOWN habitrail_switch:
+	ADD score 50 score
+BREAK
+EVERY_FRAME:
+	DMD_CLEAR dmd 0
+	DMD_SHOW_NUMBER dmd score font 48 16 256 64 ALIGN_CENTER 0 TRUE TRUE
+BREAK
+EVERY_TICK:
+	GET_MOBILE_POSITION plunger -1 temp_y
+	D_GREATER temp_y 46.95 temp_bool
+	IF temp_bool
+		SET_MOBILE_VELOCITY plunger 0.0 0.0
+	ENDIF
+BREAK

@@ -1,0 +1,1925 @@
+LOAD:
+	'TODO investigate white pixel appearing above and right of bonus ladder (likely a point collider never declared solid)
+	'TODO match collision of left structure to playfield graphic
+	'TODO reassess gate collision
+	'TODO (assets) brighten white rubber/plastic of flippers, slingshots, and drop targets by 50
+	'TODO (assets) metal frame around outside
+	'TODO (assets) stop plunger spring from emerging outside table when plunger is pulled
+
+	INTEGER "temp_int" -1
+	INTEGER "temp_int_2" -1
+	INTEGER "temp_int_3" -1
+	INTEGER "temp_int_4" -1
+	DOUBLE "temp_x" 0.0
+	DOUBLE "temp_y" 0.0
+	STRING "temp_string" ""
+
+	'TODO (assets) background
+	'TODO (assets) rolling sound
+
+	TABLE 20.25 41.0 STANDARD_NUDGE
+	TILT_BOB 1.5 31.0 -1.0 -1.0 -1.0 -1.0 'TODO (QA) balance tolerance
+	INTEGER "playfield" -1
+	LAYER 0.0 0.0 20.25 41.0 GRADIENT_CONSTANT 0.0 23.5261821 10.125 20.5 playfield '3.5 degree slope
+	INTEGER "hump_incline" -1
+	LAYER 0.0 0.0 20.25 41.0 GRADIENT_CONSTANT -55.0170727074 53.2445454741 10.125 20.5 hump_incline
+	INTEGER "hump_decline" -1
+	LAYER 0.0 0.0 20.25 41.0 GRADIENT_CONSTANT 25.1090613811 9.96311570285 10.125 20.5 hump_decline
+
+	'TODO change from 3-ball to 5-ball
+
+	INTEGER "record" -1
+	LOAD_RECORD "records/Magical-Robot-records.txt" 1 "_" 0 record
+	PRINT "Magical Robot"
+	PRINT "High score:"
+	GET_RECORD record 1 -1 temp_int
+	INTEGER_TO_STRING temp_int temp_string
+	PRINT temp_string
+
+	INTEGER "backglass" -1
+	BACKGLASS -2.875 -26.0 26.0 26.0 backglass
+	ARRAY "reels" 4 -1
+	INTEGER "reel_1" -1
+	'TODO redraw reel shading
+	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_1
+	REEL_ADD_SHADING reel_1 "fonts/common/small-reel-shading.png"
+	SET_ARRAY_ELEMENT reels 0 reel_1
+	ADD_SCORE_REEL backglass reel_1 2.875 5.75
+	INTEGER "reel_2" -1
+	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_2
+	REEL_ADD_SHADING reel_2 "fonts/common/small-reel-shading.png"
+	SET_ARRAY_ELEMENT reels 1 reel_2
+	ADD_SCORE_REEL backglass reel_2 15.625 5.75
+	INTEGER "reel_3" -1
+	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_3
+	REEL_ADD_SHADING reel_3 "fonts/common/small-reel-shading.png"
+	SET_ARRAY_ELEMENT reels 2 reel_3
+	ADD_SCORE_REEL backglass reel_3 2.875 20.25
+	INTEGER "reel_4" -1
+	SCORE_REEL 5  48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_4
+	REEL_ADD_SHADING reel_4 "fonts/common/small-reel-shading.png"
+	SET_ARRAY_ELEMENT reels 3 reel_4
+	ADD_SCORE_REEL backglass reel_4 15.625 20.25
+	DESIGNATE_BACKGLASS backglass
+
+	INTEGER "ball_1_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/1-light.png" 32 32 16.0 16.0 ball_1_light_spritesheet
+	INTEGER "ball_1_light" -1
+	SPRITE ball_1_light_spritesheet playfield BELOW_BALL 12.0 -1.0 ball_1_light
+
+	INTEGER "ball_2_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/2-light.png" 32 32 16.0 16.0 ball_2_light_spritesheet
+	INTEGER "ball_2_light" -1
+	SPRITE ball_2_light_spritesheet playfield BELOW_BALL 13.5 -1.0 ball_2_light
+
+	INTEGER "ball_3_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/3-light.png" 32 32 16.0 16.0 ball_3_light_spritesheet
+	INTEGER "ball_3_light" -1
+	SPRITE ball_3_light_spritesheet playfield BELOW_BALL 15.0 -1.0 ball_3_light
+
+	INTEGER "ball_4_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/4-light.png" 32 32 16.0 16.0 ball_4_light_spritesheet
+	INTEGER "ball_4_light" -1
+	SPRITE ball_4_light_spritesheet playfield BELOW_BALL 16.5 -1.0 ball_4_light
+
+	INTEGER "ball_5_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/5-light.png" 32 32 16.0 16.0 ball_5_light_spritesheet
+	INTEGER "ball_5_light" -1
+	SPRITE ball_5_light_spritesheet playfield BELOW_BALL 18.0 -1.0 ball_5_light
+
+	INTEGER "queued_1_light" -1
+	SPRITE ball_1_light_spritesheet playfield BELOW_BALL 0.0 -1.0 queued_1_light
+
+	INTEGER "queued_2_light" -1
+	SPRITE ball_2_light_spritesheet playfield BELOW_BALL 1.5 -1.0 queued_2_light
+
+	INTEGER "queued_3_light" -1
+	SPRITE ball_3_light_spritesheet playfield BELOW_BALL 3.0 -1.0 queued_3_light
+
+	INTEGER "queued_4_light" -1
+	SPRITE ball_4_light_spritesheet playfield BELOW_BALL 4.5 -1.0 queued_4_light
+
+	INTEGER "game_over_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/game-over-light.png" 64 32 32.0 16.0 game_over_light_spritesheet
+	INTEGER "game_over_light" -1
+	SPRITE game_over_light_spritesheet playfield BELOW_BALL 20.0 -1.0 game_over_light
+	SET_SPRITE_FRAME game_over_light 1
+
+	INTEGER "backglass_shoot_again_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/shoot-again-light.png" 64 32 32.0 16.0 backglass_shoot_again_light_spritesheet
+	INTEGER "backglass_shoot_again_light" -1
+	SPRITE backglass_shoot_again_light_spritesheet playfield BELOW_BALL 7.0 -1.0 backglass_shoot_again_light
+
+	INTEGER "tilt_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/tilt-light.png" 64 32 32.0 16.0 tilt_light_spritesheet
+	INTEGER "tilt_light" -1
+	SPRITE tilt_light_spritesheet playfield BELOW_BALL 10.0 -1.0 tilt_light
+
+	INTEGER "rollover_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/100k-light.png" 96 32 48.0 16.0 rollover_light_spritesheet
+	INTEGER "rollover_light_1" -1
+	SPRITE rollover_light_spritesheet playfield BELOW_BALL 2.0 -21.25 rollover_light_1
+	INTEGER "rollover_light_2" -1
+	SPRITE rollover_light_spritesheet playfield BELOW_BALL 14.75 -21.25 rollover_light_2
+	INTEGER "rollover_light_3" -1
+	SPRITE rollover_light_spritesheet playfield BELOW_BALL 2.0 -6.75 rollover_light_3
+	INTEGER "rollover_light_4" -1
+	SPRITE rollover_light_spritesheet playfield BELOW_BALL 14.75 -6.75 rollover_light_4
+
+	INTEGER "player_1_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/1-up-light.png" 48 48 24.0 24.0 player_1_light_spritesheet
+	INTEGER "player_1_light" -1
+	SPRITE player_1_light_spritesheet playfield BELOW_BALL -1.0 -19.5 player_1_light
+	INTEGER "player_2_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/2-up-light.png" 48 48 24.0 24.0 player_2_light_spritesheet
+	INTEGER "player_2_light" -1
+	SPRITE player_2_light_spritesheet playfield BELOW_BALL 11.75 -19.5 player_2_light
+	INTEGER "player_3_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/3-up-light.png" 48 48 24.0 24.0 player_3_light_spritesheet
+	INTEGER "player_3_light" -1
+	SPRITE player_3_light_spritesheet playfield BELOW_BALL -1.0 -5.0 player_3_light
+	INTEGER "player_4_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/4-up-light.png" 48 48 24.0 24.0 player_4_light_spritesheet
+	INTEGER "player_4_light" -1
+	SPRITE player_4_light_spritesheet playfield BELOW_BALL 11.75 -5.0 player_4_light
+
+	'TODO (assets) realistic credit reel (shading, bold sans serif typeface)
+	INTEGER "credit_reel_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/credit-reel.png" 32 20 16.0 10.0 credit_reel_spritesheet
+	INTEGER "credit_reel" -1
+	SPRITE credit_reel_spritesheet playfield BELOW_BALL  20.0 -2.0 credit_reel
+
+	'TODO (assets) research proper size/spacing of match lights
+
+	INTEGER "match_00_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/00-light.png" 24 24 12.0 12.0 match_00_light_spritesheet
+	INTEGER "match_00_light" -1
+	SPRITE match_00_light_spritesheet playfield BELOW_BALL 2.0 -25.0 match_00_light
+	SET_SPRITE_VISIBILITY match_00_light FALSE
+
+	INTEGER "match_10_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/10-light.png" 24 24 12.0 12.0 match_10_light_spritesheet
+	INTEGER "match_10_light" -1
+	SPRITE match_10_light_spritesheet playfield BELOW_BALL 4.0 -25.0 match_10_light
+	SET_SPRITE_VISIBILITY match_10_light FALSE
+
+	INTEGER "match_20_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/20-light.png" 24 24 12.0 12.0 match_20_light_spritesheet
+	INTEGER "match_20_light" -1
+	SPRITE match_20_light_spritesheet playfield BELOW_BALL 6.0 -25.0 match_20_light
+	SET_SPRITE_VISIBILITY match_20_light FALSE
+
+	INTEGER "match_30_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/30-light.png" 24 24 12.0 12.0 match_30_light_spritesheet
+	INTEGER "match_30_light" -1
+	SPRITE match_30_light_spritesheet playfield BELOW_BALL 8.0 -25.0 match_30_light
+	SET_SPRITE_VISIBILITY match_30_light FALSE
+
+	INTEGER "match_40_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/40-light.png" 24 24 12.0 12.0 match_40_light_spritesheet
+	INTEGER "match_40_light" -1
+	SPRITE match_40_light_spritesheet playfield BELOW_BALL 10.0 -25.0 match_40_light
+	SET_SPRITE_VISIBILITY match_40_light FALSE
+
+	INTEGER "match_50_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/50-light.png" 24 24 12.0 12.0 match_50_light_spritesheet
+	INTEGER "match_50_light" -1
+	SPRITE match_50_light_spritesheet playfield BELOW_BALL 12.0 -25.0 match_50_light
+	SET_SPRITE_VISIBILITY match_50_light FALSE
+
+	INTEGER "match_60_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/60-light.png" 24 24 12.0 12.0 match_60_light_spritesheet
+	INTEGER "match_60_light" -1
+	SPRITE match_60_light_spritesheet playfield BELOW_BALL 14.0 -25.0 match_60_light
+	SET_SPRITE_VISIBILITY match_60_light TRUE
+
+	INTEGER "match_70_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/70-light.png" 24 24 12.0 12.0 match_70_light_spritesheet
+	INTEGER "match_70_light" -1
+	SPRITE match_70_light_spritesheet playfield BELOW_BALL 16.0 -25.0 match_70_light
+	SET_SPRITE_VISIBILITY match_70_light FALSE
+
+	INTEGER "match_80_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/80-light.png" 24 24 12.0 12.0 match_80_light_spritesheet
+	INTEGER "match_80_light" -1
+	SPRITE match_80_light_spritesheet playfield BELOW_BALL 18.0 -25.0 match_80_light
+	SET_SPRITE_VISIBILITY match_80_light FALSE
+
+	INTEGER "match_90_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/90-light.png" 24 24 12.0 12.0 match_90_light_spritesheet
+	INTEGER "match_90_light" -1
+	SPRITE match_90_light_spritesheet playfield BELOW_BALL 20.0 -25.0 match_90_light
+	SET_SPRITE_VISIBILITY match_90_light FALSE
+
+	ARRAY "match_sequence" 10 0
+	SET_ARRAY_ELEMENT match_sequence 0 6
+	SET_ARRAY_ELEMENT match_sequence 1 1
+	SET_ARRAY_ELEMENT match_sequence 2 7
+	SET_ARRAY_ELEMENT match_sequence 3 3
+	SET_ARRAY_ELEMENT match_sequence 4 8
+	SET_ARRAY_ELEMENT match_sequence 5 2
+	SET_ARRAY_ELEMENT match_sequence 6 5
+	SET_ARRAY_ELEMENT match_sequence 7 9
+	SET_ARRAY_ELEMENT match_sequence 8 4
+	SET_ARRAY_ELEMENT match_sequence 9 0
+
+	INTEGER "match_position" 0
+
+	INTEGER "replay_score" 50000
+
+	'game variables
+	INTEGER "player" 0
+	INTEGER "player_count" 0
+	INTEGER "ball_in_play" 0 '0 indicates game over
+	INTEGER "credits" 0 'TODO (assets) credit reel on backglass
+	INTEGER "free_play" TRUE
+	ARRAY "score" 4 0
+	INTEGER "trough_hole_occupied" TRUE
+	INTEGER "eject_hole_occupied" FALSE
+	INTEGER "suppress_playfield_reset" FALSE
+	INTEGER "match_digit" 0
+	INTEGER "tournament_mode" FALSE
+
+	'per-ball variables
+	INTEGER "playfield_validated" FALSE
+	INTEGER "extra_ball" FALSE
+	INTEGER "bonus" 0
+	INTEGER "bonus_multiplier" 1
+	ARRAY "rollovers" 3 FALSE
+	INTEGER "rollovers_hit" 0
+	INTEGER "left_drop_targets_down" 0
+	INTEGER "right_drop_targets_down" 0
+	INTEGER "captive_ball_lit" FALSE
+	INTEGER "left_bank_clear" FALSE
+	INTEGER "right_bank_clear" FALSE
+	INTEGER "eject_hole_lit" FALSE
+	INTEGER "tilt" FALSE
+
+	DOUBLE "nudge_x" 0.0
+	DOUBLE "nudge_y" 0.0
+	DOUBLE "plunger_speed" 0.0
+
+	TIMER "plunger_sample_timer"
+
+	INTEGER "score_routine" -1
+	INTEGER "score_pending" 0
+
+	INTEGER "save_score" -1
+
+	INTEGER "trough_kickout_routine" -1
+	TIMER "trough_kickout_timer"
+
+	TIMER "bonus_count_timer"
+	TIMER "reset_timer"
+	TIMER "launch_timer"
+
+	TIMER "reel_reset_timer"
+	INTEGER "next_reel_reset" -1
+
+	INTEGER "eject_routine" -1
+	TIMER "eject_count_timer"
+	TIMER "eject_timer"
+
+	INTEGER "check_rollovers" -1
+	INTEGER "check_left_bank" -1
+	INTEGER "check_right_bank" -1
+
+	INTEGER "add_bonus" -1
+	INTEGER "update_bonus_ladder" -1
+	INTEGER "update_bonus_multiplier" -1
+	INTEGER "reset_drop_targets" -1
+
+	INTEGER "update_match_lights" -1
+
+	INTEGER "update_ball_in_play" -1
+	INTEGER "update_queued_players" -1
+
+	INTEGER "tilt_routine" -1
+
+	INTEGER "add_credit" -1
+	INTEGER "charge_credit" -1
+	INTEGER "update_credit_reel" -1
+
+	INTEGER "playfield_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/playfield.png" 647 1312 0.0 0.0 playfield_spritesheet
+	INTEGER "playfield_sprite" -1
+	SPRITE playfield_spritesheet playfield BELOW_BALL 0.0 0.0 playfield_sprite
+
+	INTEGER "above_ball_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/above-ball.png" 647 1312 0.0 0.0 above_ball_spritesheet
+	INTEGER "above_ball_sprite" -1
+	SPRITE above_ball_spritesheet hump_decline ABOVE_BALL 0.0 0.0 above_ball_sprite
+
+	ARC 10.13 10.57 9.66 3.14159265 6.28318531 -1
+	WIRE -1 playfield
+
+	'top right plastic
+	TURTLE_TELEPORT 18.26 10.57
+	TURTLE_SET_HEADING 4.71238898
+	TURTLE_ARC 8.13 -1.047197 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 -1.57079633 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.0 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 -0.523598776 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.0 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 -3.14159265 -1
+	RUBBER -1 playfield
+	TURTLE_ARC 0.625 2.35619449 -1
+	METAL -1 playfield
+
+	TURTLE_TURN 1.57079633
+	TURTLE_FORWARD 0.025
+	TURTLE_TURN -1.57079633
+	INTEGER "eject_hole" -1
+	TURTLE_ARC 0.6 6.28318531 eject_hole
+	WOOD eject_hole playfield
+	GATE eject_hole -1
+	TURTLE_TURN -1.57079633
+	TURTLE_FORWARD 0.025
+	TURTLE_TURN 1.57079633
+	INTEGER "eject_hole_magnet" -1
+	MAGNET playfield 14.47003 5.655049 96.5225 0.6 0.5 TRUE eject_hole_magnet
+
+	TURTLE_ARC 8.25 0.733038286 -1
+	PLASTIC -1 playfield
+
+	INTEGER "plunger_lane_gate" -1
+	LINE 14.1950017 3.52921446 14.960002 2.20419578 plunger_lane_gate
+	'TODO (assets) impact sound (add gate material?)
+	SOLID plunger_lane_gate playfield 1.50 0.05 -1
+	GATE plunger_lane_gate -1
+
+	INTEGER "left_gate" -1
+	LINE 7.34937623 2.93029899 6.82608542 1.49256928 left_gate
+	'TODO (assets) impact sound (add gate material?)
+	SOLID left_gate playfield 1.50 0.05 -1
+	GATE left_gate 1
+
+	POINT 6.82608542 1.49256928 -1
+	METAL -1 playfield
+
+	INTEGER "left_plunger_lane_wall" -1
+	LINE 18.25 10.57 18.25 32.08 left_plunger_lane_wall
+	LINE 18.25 35.67 18.25 34.0 -1
+	LINE 19.78 10.57 19.78 35.67 -1
+	LINE 0.47 10.57 0.47 32.08 -1
+	INTEGER "right_playfield_wall" -1
+	LINE 17.78 10.57 17.78 32.08 right_playfield_wall
+
+	COMPOSITE left_plunger_lane_wall right_playfield_wall -1
+	WOOD -1 playfield
+
+	'plunger lane floor
+	POINT 18.65 35.67 -1
+	METAL -1 playfield
+	POINT 19.38 35.67 -1
+	METAL -1 playfield
+
+	'plunger
+	INTEGER "plunger_arc" -1
+	ARC 19.015 36.035 0.365 3.14159265 6.28318531 plunger_arc
+	INTEGER "plunger" -1
+	MOBILE plunger_arc 19.015 36.035 0.0 0.0 0.0 2.65 0.0 0.0 1.4 1.0 plunger
+	PLASTIC plunger playfield
+
+	INTEGER "plunger_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/plunger.png" 31 232 15.5 12.5 plunger_spritesheet
+	INTEGER "plunger_sprite" -1
+	SPRITE plunger_spritesheet playfield BELOW_BALL 0.0 0.0 plunger_sprite
+	SYNC_SPRITE plunger_sprite plunger
+
+	INTEGER "apron_top_right" -1
+	LINE 18.25 32.74 17.61 32.74 apron_top_right
+
+	LINE 17.61 32.74 10.39 36.64 -1
+
+	LINE 0.74 32.74 7.96 36.64 -1
+
+	INTEGER "apron_top_left" -1
+	LINE 0.0 32.74 0.74 32.74 apron_top_left
+
+	INTEGER "apron" -1
+	COMPOSITE apron_top_right apron_top_left apron
+	METAL apron playfield
+	METAL apron hump_incline
+	METAL apron hump_decline
+
+	'ball trough
+	TURTLE_TELEPORT 7.96 37.64
+	TURTLE_SET_HEADING 1.04719755
+	TURTLE_POINT -1
+	METAL -1 playfield
+	TURTLE_LINE 0.878460972 -1
+	METAL -1 playfield
+	TURTLE_TURN -0.523598776
+	TURTLE_LINE 0.878460972 -1
+	METAL -1 playfield
+	TURTLE_SET_HEADING -0.495261936
+	TURTLE_LINE 10.3711537374 -1
+	METAL -1 playfield
+	METAL -1 hump_incline
+	METAL -1 hump_decline
+	TURTLE_POINT -1
+	METAL -1 playfield
+
+	INTEGER "hump_decline_out_line" -1
+	TURTLE_SET_HEADING -1.57079632679
+	TURTLE_LINE 1.2 hump_decline_out_line
+	INTEGER "hump_decline_out_portal" -1
+	SWITCH hump_decline_out_line hump_decline hump_decline_out_portal
+	LAYER_PORTAL hump_decline_out_line playfield
+	GATE hump_decline_out_line 1
+
+	INTEGER "hump_decline_out_reverse_line" -1
+	TURTLE_SET_HEADING 1.57079632679
+	TURTLE_LINE 1.2 hump_decline_out_reverse_line
+	INTEGER "hump_decline_out_reverse_portal" -1
+	SWITCH hump_decline_out_reverse_line playfield hump_decline_out_reverse_portal
+	LAYER_PORTAL hump_decline_out_reverse_line hump_decline
+	GATE hump_decline_out_reverse_line 1
+
+	INTEGER "hump_incline_in_line" -1
+	TURTLE_TELEPORT 10.39 36.64
+	TURTLE_SET_HEADING 1.07553439079
+	TURTLE_LINE 1.3 hump_incline_in_line
+	INTEGER "hump_incline_in_portal" -1
+	SWITCH hump_incline_in_line playfield hump_incline_in_portal
+	LAYER_PORTAL hump_incline_in_line hump_incline
+	GATE hump_incline_in_line -1
+
+	INTEGER "hump_incline_in_reverse_line" -1
+	TURTLE_TURN 3.14159265359
+	TURTLE_LINE 1.3 hump_incline_in_reverse_line
+	INTEGER "hump_incline_in_reverse_portal" -1
+	SWITCH hump_incline_in_reverse_line hump_incline hump_incline_in_reverse_portal
+	LAYER_PORTAL hump_incline_in_reverse_line playfield
+	GATE hump_incline_in_reverse_line -1
+
+	INTEGER "hump_incline_out_line" -1
+	TURTLE_TURN 1.57079632679
+	TURTLE_FORWARD 3.25
+	TURTLE_TURN 1.57079632679
+	TURTLE_LINE 1.3 hump_incline_out_line
+	INTEGER "hump_incline_out_portal" -1
+	SWITCH hump_incline_out_line hump_incline hump_incline_out_portal
+	LAYER_PORTAL hump_incline_out_line hump_decline
+	GATE hump_incline_out_line -1
+
+	INTEGER "hump_incline_out_reverse_line" -1
+	TURTLE_TURN 3.14159265359
+	TURTLE_LINE 1.3 hump_incline_out_reverse_line
+	INTEGER "hump_incline_out_reverse_portal" -1
+	SWITCH hump_incline_out_reverse_line hump_decline hump_incline_out_reverse_portal
+	LAYER_PORTAL hump_incline_out_reverse_line hump_incline
+	GATE hump_incline_out_reverse_line -1
+
+	INTEGER "trough_hole" -1
+	CIRCLE 9.525 38.0 0.6 trough_hole
+	WOOD trough_hole playfield
+	GATE trough_hole -1
+	INTEGER "trough_hole_magnet" -1
+	MAGNET playfield 9.525 38.0 96.5225 0.6 0.5 TRUE trough_hole_magnet
+
+	'TODO (before drawing playfield) adjust bouncers for reliability
+
+	INTEGER "left_bouncer_outer_arc" -1
+	TURTLE_TELEPORT 0.50 32.68
+	TURTLE_SET_HEADING 3.577925
+	TURTLE_ARC 0.3 3.14159265 left_bouncer_outer_arc
+	RUBBER left_bouncer_outer_arc playfield
+
+	INTEGER "left_bouncer_face" -1
+	TURTLE_LINE 1.2 left_bouncer_face
+	RUBBER_BAND left_bouncer_face playfield
+
+	INTEGER "left_bouncer_inner_arc" -1
+	TURTLE_ARC 0.3 3.14159265 left_bouncer_inner_arc
+	RUBBER left_bouncer_inner_arc playfield
+
+	INTEGER "right_bouncer_outer_arc" -1
+	TURTLE_TELEPORT 17.75 32.68
+	TURTLE_SET_HEADING -0.436332
+	TURTLE_ARC 0.3 -3.14159265 right_bouncer_outer_arc
+	RUBBER right_bouncer_outer_arc playfield
+
+	INTEGER "right_bouncer_face" -1
+	TURTLE_LINE 1.2 right_bouncer_face
+	RUBBER_BAND right_bouncer_face playfield
+
+	INTEGER "right_bouncer_inner_arc" -1
+	TURTLE_ARC 0.3 -3.14159265 right_bouncer_inner_arc
+	RUBBER right_bouncer_inner_arc playfield
+
+	'TODO implement STANDARD_BALL and use
+	INTEGER "ball_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/common/ball.png" 34 34 17.0 17.0 ball_spritesheet
+	BALL playfield 9.525 38.0 -1.0 -1.0 -1.0 TRUE TRUE ball_spritesheet -1 -1 -1
+	'STANDARD_BALL playfield 9.525 38.0 -1
+
+	INTEGER "left_outlane_rollover" -1
+	LINE 1.2 28.1 1.2 29.225 -1
+	SWITCH -1 playfield left_outlane_rollover
+
+	INTEGER "left_inlane_rollover" -1
+	CIRCLE 3.25 28.1625 0.5 left_inlane_rollover
+	GATE left_inlane_rollover -1
+	SWITCH -1 playfield left_inlane_rollover
+
+	INTEGER "left_divider_lower_arc" -1
+	TURTLE_TELEPORT 1.9 29.59
+	TURTLE_SET_HEADING 1.483530
+	TURTLE_ARC  0.3 -3.14159265 left_divider_lower_arc
+	RUBBER left_divider_lower_arc playfield
+
+	INTEGER "left_divider_inner_face" -1
+	TURTLE_LINE 1.74 left_divider_inner_face
+	PLASTIC left_divider_inner_face playfield
+
+	INTEGER "left_divider_upper_arc" -1
+	TURTLE_ARC 0.3 -3.14159265 left_divider_upper_arc
+	RUBBER left_divider_upper_arc playfield
+
+	INTEGER "left_divider_outer_face" -1
+	TURTLE_LINE 1.74 left_divider_outer_face
+	PLASTIC left_divider_outer_face playfield
+
+	INTEGER "right_outlane_rollover" -1
+	LINE 17.05 28.1 17.05 29.225 -1
+	SWITCH -1 playfield right_outlane_rollover
+
+	INTEGER "right_inlane_rollover" -1
+	CIRCLE 15.0 28.1625 0.5 right_inlane_rollover
+	GATE right_inlane_rollover -1
+	SWITCH -1 playfield right_inlane_rollover
+
+	INTEGER "right_divider_lower_arc" -1
+	TURTLE_TELEPORT 16.35 29.59
+	TURTLE_SET_HEADING 1.658062
+	TURTLE_ARC  0.3 3.14159265 right_divider_lower_arc
+	RUBBER right_divider_lower_arc playfield
+
+	INTEGER "right_divider_inner_face" -1
+	TURTLE_LINE 1.74 right_divider_inner_face
+	PLASTIC right_divider_inner_face playfield
+
+	INTEGER "right_divider_upper_arc" -1
+	TURTLE_ARC 0.3 3.14159265 right_divider_upper_arc
+	RUBBER right_divider_upper_arc playfield
+
+	INTEGER "right_divider_outer_face" -1
+	TURTLE_LINE 1.74 right_divider_outer_face
+	PLASTIC right_divider_outer_face playfield
+
+	INTEGER "left_guide_upper_face" -1
+	TURTLE_TELEPORT 3.4 31.19
+	TURTLE_SET_HEADING 0.436332
+	TURTLE_LINE 1.9 left_guide_upper_face
+	PLASTIC left_guide_upper_face playfield
+
+	INTEGER "left_guide_inner_arc" -1
+	TURTLE_ARC 0.3 3.14159265 left_guide_inner_arc
+	PLASTIC left_guide_inner_arc playfield
+
+	INTEGER "left_guide_lower_face" -1
+	TURTLE_LINE 1.9 left_guide_lower_face
+	PLASTIC left_guide_lower_face playfield
+
+	INTEGER "left_guide_outer_arc" -1
+	TURTLE_ARC 0.3 3.14159265 left_guide_outer_arc
+	PLASTIC left_guide_outer_arc playfield
+
+	INTEGER "right_guide_upper_face" -1
+	TURTLE_TELEPORT 14.85 31.19
+	TURTLE_SET_HEADING 2.705261
+	TURTLE_LINE 1.9 right_guide_upper_face
+	PLASTIC right_guide_upper_face playfield
+
+	INTEGER "right_guide_inner_arc" -1
+	TURTLE_ARC 0.3 -3.14159265 right_guide_inner_arc
+	PLASTIC right_guide_inner_arc playfield
+
+	INTEGER "right_guide_lower_face" -1
+	TURTLE_LINE 1.9 right_guide_lower_face
+	PLASTIC right_guide_lower_face playfield
+
+	INTEGER "right_guide_outer_arc" -1
+	TURTLE_ARC 0.3 -3.14159265 right_guide_outer_arc
+	PLASTIC right_guide_outer_arc playfield
+
+	INTEGER "left_slingshot" -1
+	TURTLE_TELEPORT 5.4 29.6
+	TURTLE_SET_HEADING 4.450590
+	TURTLE_LINE 2.8 left_slingshot
+	RUBBER_BAND left_slingshot playfield
+	SET_SENSITIVITY left_slingshot 4.75
+
+	INTEGER "left_slingshot_upper_post" -1
+	TURTLE_ARC 0.3 -2.967060 left_slingshot_upper_post
+	RUBBER left_slingshot_upper_post playfield
+
+	INTEGER "left_slingshot_back_face" -1
+	TURTLE_LINE 2.4 left_slingshot_back_face
+	RUBBER_BAND left_slingshot_back_face playfield
+
+	INTEGER "left_slingshot_outer_post" -1
+	TURTLE_ARC 0.3 -0.940152678274 left_slingshot_outer_post
+	RUBBER left_slingshot_outer_post playfield
+
+	INTEGER "left_slingshot_lower_face" -1
+	TURTLE_LINE 0.604029800589 left_slingshot_lower_face
+	RUBBER_BAND left_slingshot_lower_face playfield
+
+	INTEGER "left_slingshot_inner_post" -1
+	TURTLE_ARC 0.3 -2.59821533186 left_slingshot_inner_post
+	RUBBER left_slingshot_inner_post playfield
+
+	INTEGER "right_slingshot" -1
+	TURTLE_TELEPORT 12.85 29.6
+	TURTLE_SET_HEADING -1.308997
+	TURTLE_LINE 2.8 right_slingshot
+	RUBBER_BAND right_slingshot playfield
+	SET_SENSITIVITY right_slingshot 4.75
+
+	INTEGER "right_slingshot_upper_post" -1
+	TURTLE_ARC 0.3 2.967060 right_slingshot_upper_post
+	RUBBER right_slingshot_upper_post playfield
+
+	INTEGER "right_slingshot_back_face" -1
+	TURTLE_LINE 2.4 right_slingshot_back_face
+	RUBBER_BAND right_slingshot_back_face playfield
+
+	INTEGER "right_slingshot_outer_post" -1
+	TURTLE_ARC 0.3 0.940152678274 right_slingshot_outer_post
+	RUBBER right_slingshot_outer_post playfield
+
+	INTEGER "right_slingshot_lower_face" -1
+	TURTLE_LINE 0.604029800589 right_slingshot_lower_face
+	RUBBER_BAND right_slingshot_lower_face playfield
+
+	INTEGER "right_slingshot_inner_post" -1
+	TURTLE_ARC 0.3 2.59821533186 right_slingshot_inner_post
+	RUBBER right_slingshot_inner_post playfield
+
+	INTEGER "left_overhang_lower_post" -1
+	TURTLE_TELEPORT 0.47 25.6
+	TURTLE_SET_HEADING  1.57079633
+	TURTLE_ARC 0.3 -2.21429744 left_overhang_lower_post
+	RUBBER left_overhang_lower_post playfield
+
+	INTEGER "left_overhang_lower_face" -1
+	TURTLE_LINE 2.4 left_overhang_lower_face
+	RUBBER_BAND left_overhang_lower_face playfield
+
+	INTEGER "left_overhang_outer_post" -1
+	TURTLE_ARC 0.3 -1.57079633 left_overhang_outer_post
+	RUBBER left_overhang_outer_post playfield
+
+	INTEGER "left_overhang_upper_face" -1
+	TURTLE_LINE 3.2 left_overhang_upper_face
+	RUBBER_BAND left_overhang_upper_face playfield
+	SET_SENSITIVITY left_overhang_upper_face 4.75
+
+	'INTEGER "left_overhang_upper_post" -1
+	'TURTLE_ARC 0.3 -2.49809154 left_overhang_upper_post
+	'RUBBER left_overhang_upper_post playfield
+
+	'left drop target bank
+	INTEGER "left_bank_inner_face" -1
+	TURTLE_TURN 1.13446401
+	TURTLE_LINE 6.0 left_bank_inner_face
+	RUBBER_BAND left_bank_inner_face playfield
+	SET_SENSITIVITY left_bank_inner_face 4.75
+
+	INTEGER "left_target_spritesheet" -1
+	'TODO (assets) consider brightening drop targets when standing
+	LOAD_SPRITESHEET "graphics/MagicalRobot/left-drop-target.png" 20 31 6.0 31.0 left_target_spritesheet
+
+	TURTLE_TURN 1.57079633
+	TURTLE_FORWARD 0.3125
+	TURTLE_TURN 1.57079633
+	INTEGER "left_target_1_line" -1
+	INTEGER "left_target_2_line" -1
+	INTEGER "left_target_3_line" -1
+	INTEGER "left_target_4_line" -1
+	INTEGER "left_target_5_line" -1
+	INTEGER "left_target_1" -1
+	INTEGER "left_target_2" -1
+	INTEGER "left_target_3" -1
+	INTEGER "left_target_4" -1
+	INTEGER "left_target_5" -1
+	INTEGER "left_target_1_sprite" -1
+	INTEGER "left_target_2_sprite" -1
+	INTEGER "left_target_3_sprite" -1
+	INTEGER "left_target_4_sprite" -1
+	INTEGER "left_target_5_sprite" -1
+	TURTLE_LINE 0.95 left_target_1_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE left_target_spritesheet playfield BELOW_BALL temp_x temp_y left_target_1_sprite
+	SET_SPRITE_FRAME left_target_1_sprite 1
+	TURTLE_FORWARD 0.3125
+	TURTLE_LINE 0.95 left_target_2_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE left_target_spritesheet playfield BELOW_BALL temp_x temp_y left_target_2_sprite
+	SET_SPRITE_FRAME left_target_2_sprite 1
+	TURTLE_FORWARD 0.3125
+	TURTLE_LINE 0.95 left_target_3_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE left_target_spritesheet playfield BELOW_BALL temp_x temp_y left_target_3_sprite
+	SET_SPRITE_FRAME left_target_3_sprite 1
+	TURTLE_FORWARD 0.3125
+	TURTLE_LINE 0.95 left_target_4_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE left_target_spritesheet playfield BELOW_BALL temp_x temp_y left_target_4_sprite
+	SET_SPRITE_FRAME left_target_4_sprite 1
+	TURTLE_FORWARD 0.3125
+	TURTLE_LINE 0.95 left_target_5_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE left_target_spritesheet playfield BELOW_BALL temp_x temp_y left_target_5_sprite
+	SET_SPRITE_FRAME left_target_5_sprite 1
+	COMPOSITE left_target_1_line left_target_1_line left_target_1
+	PLASTIC left_target_1 playfield
+	SET_DETECTION_NORMAL left_target_1 0.4909629
+	COMPOSITE left_target_2_line left_target_2_line left_target_2
+	PLASTIC left_target_2 playfield
+	SET_DETECTION_NORMAL left_target_2 0.4909629
+	COMPOSITE left_target_3_line left_target_3_line left_target_3
+	PLASTIC left_target_3 playfield
+	SET_DETECTION_NORMAL left_target_3 0.4909629
+	COMPOSITE left_target_4_line left_target_4_line left_target_4
+	PLASTIC left_target_4 playfield
+	SET_DETECTION_NORMAL left_target_4 0.4909629
+	COMPOSITE left_target_5_line left_target_5_line left_target_5
+	PLASTIC left_target_5 playfield
+	SET_DETECTION_NORMAL left_target_5 0.4909629
+	SET_SENSITIVITY left_target_1 4.0
+	SET_SENSITIVITY left_target_2 4.0
+	SET_SENSITIVITY left_target_3 4.0
+	SET_SENSITIVITY left_target_4 4.0
+	SET_SENSITIVITY left_target_5 4.0
+	TURTLE_TURN 1.57079633
+	TURTLE_FORWARD 0.3125
+	TURTLE_TURN 1.57079633
+	TURTLE_FORWARD 6.0
+
+	TURTLE_ARC 0.3 -1.01456265 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 2.5 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 8.6 1.04719755 -1
+	PLASTIC -1 playfield
+	TURTLE_POINT -1
+	PLASTIC -1 playfield
+	'TURTLE_LINE 5.6577 -1
+	'RUBBER_BAND -1 playfield
+	'TURTLE_ARC 0.3 -2.61799388 -1
+	'RUBBER -1 playfield
+
+	INTEGER "right_overhang_lower_post" -1
+	TURTLE_TELEPORT 17.78 25.6
+	TURTLE_SET_HEADING  1.57079633
+	TURTLE_ARC 0.3 2.21429744 right_overhang_lower_post
+	RUBBER right_overhang_lower_post playfield
+
+	INTEGER "right_overhang_lower_face" -1
+	TURTLE_LINE 2.4 right_overhang_lower_face
+	RUBBER_BAND right_overhang_lower_face playfield
+
+	INTEGER "right_overhang_outer_post" -1
+	TURTLE_ARC 0.3 1.57079633 right_overhang_outer_post
+	RUBBER right_overhang_outer_post playfield
+
+	INTEGER "right_overhang_upper_face" -1
+	TURTLE_LINE 3.2 right_overhang_upper_face
+	RUBBER_BAND right_overhang_upper_face playfield
+	SET_SENSITIVITY right_overhang_upper_face 4.75
+
+	INTEGER "right_overhang_upper_post" -1
+	TURTLE_ARC 0.3 2.49809154 right_overhang_upper_post
+	RUBBER right_overhang_upper_post playfield
+
+	INTEGER "right_overhang_wire" -1
+	ARC -10.9 16.0 28.6 -0.183259571 0.183259571 right_overhang_wire
+
+	INTEGER "right_overhang_wire_composite" -1
+	COMPOSITE right_overhang_wire right_overhang_wire right_overhang_wire_composite
+	WIRE right_overhang_wire_composite playfield
+
+	INTEGER "right_bank_inner_face" -1
+	TURTLE_TELEPORT 15.6 18.0
+	TURTLE_SET_HEADING 4.363323
+	TURTLE_LINE 6.0 right_bank_inner_face
+	RUBBER_BAND right_bank_inner_face playfield
+	SET_SENSITIVITY right_bank_inner_face 4.75
+
+	INTEGER "right_target_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/right-drop-target.png" 16 31 11.0 31.0 right_target_spritesheet
+
+	TURTLE_TURN -1.57079633
+	TURTLE_FORWARD 0.3125
+	TURTLE_TURN -1.57079633
+	INTEGER "right_target_1_line" -1
+	INTEGER "right_target_2_line" -1
+	INTEGER "right_target_3_line" -1
+	INTEGER "right_target_4_line" -1
+	INTEGER "right_target_5_line" -1
+	INTEGER "right_target_1" -1
+	INTEGER "right_target_2" -1
+	INTEGER "right_target_3" -1
+	INTEGER "right_target_4" -1
+	INTEGER "right_target_5" -1
+	INTEGER "right_target_1_sprite" -1
+	INTEGER "right_target_2_sprite" -1
+	INTEGER "right_target_3_sprite" -1
+	INTEGER "right_target_4_sprite" -1
+	INTEGER "right_target_5_sprite" -1
+	TURTLE_LINE 0.95 right_target_1_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_target_spritesheet playfield BELOW_BALL temp_x temp_y right_target_1_sprite
+	SET_SPRITE_FRAME right_target_1_sprite 1
+	TURTLE_FORWARD 0.3125
+	TURTLE_LINE 0.95 right_target_2_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_target_spritesheet playfield BELOW_BALL temp_x temp_y right_target_2_sprite
+	SET_SPRITE_FRAME right_target_2_sprite 1
+	TURTLE_FORWARD 0.3125
+	TURTLE_LINE 0.95 right_target_3_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_target_spritesheet playfield BELOW_BALL temp_x temp_y right_target_3_sprite
+	SET_SPRITE_FRAME right_target_3_sprite 1
+	TURTLE_FORWARD 0.3125
+	TURTLE_LINE 0.95 right_target_4_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_target_spritesheet playfield BELOW_BALL temp_x temp_y right_target_4_sprite
+	SET_SPRITE_FRAME right_target_4_sprite 1
+	TURTLE_FORWARD 0.3125
+	TURTLE_LINE 0.95 right_target_5_line
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_target_spritesheet playfield BELOW_BALL temp_x temp_y right_target_5_sprite
+	SET_SPRITE_FRAME right_target_5_sprite 1
+	COMPOSITE right_target_1_line right_target_1_line right_target_1
+	PLASTIC right_target_1 playfield
+	SET_DETECTION_NORMAL right_target_1 2.79252667
+	COMPOSITE right_target_2_line right_target_2_line right_target_2
+	PLASTIC right_target_2 playfield
+	SET_DETECTION_NORMAL right_target_2 2.79252667
+	COMPOSITE right_target_3_line right_target_3_line right_target_3
+	PLASTIC right_target_3 playfield
+	SET_DETECTION_NORMAL right_target_3 2.79252667
+	COMPOSITE right_target_4_line right_target_4_line right_target_4
+	PLASTIC right_target_4 playfield
+	SET_DETECTION_NORMAL right_target_4 2.79252667
+	COMPOSITE right_target_5_line right_target_5_line right_target_5
+	PLASTIC right_target_5 playfield
+	SET_DETECTION_NORMAL right_target_5 2.79252667
+	SET_SENSITIVITY right_target_1 4.0
+	SET_SENSITIVITY right_target_2 4.0
+	SET_SENSITIVITY right_target_3 4.0
+	SET_SENSITIVITY right_target_4 4.0
+	SET_SENSITIVITY right_target_5 4.0
+	TURTLE_TURN -1.57079633
+	TURTLE_FORWARD 0.3125
+	TURTLE_TURN -1.57079633
+	TURTLE_FORWARD 6.0
+
+	INTEGER "bank_upper_post" -1
+	TURTLE_ARC 0.3 2.61799388 bank_upper_post
+	RUBBER bank_upper_post playfield
+
+	INTEGER "bank_upper_face" -1
+	TURTLE_LINE 2.67885 bank_upper_face
+	RUBBER_BAND bank_upper_face playfield
+
+	INTEGER "bank_outer_post" -1
+	TURTLE_ARC 0.3 0.872664626 bank_outer_post
+	RUBBER bank_outer_post playfield
+
+	INTEGER "bank_outer_face" -1
+	TURTLE_LINE 3.91622 bank_outer_face
+	RUBBER_BAND bank_outer_face playfield
+
+	INTEGER "bank_lower_post" -1
+	TURTLE_ARC 0.3 2.7925268 bank_lower_post
+	RUBBER bank_lower_post playfield
+
+	'captive ball lane
+	TURTLE_TELEPORT 5.2 12.3
+	TURTLE_SET_HEADING 4.1887902
+	TURTLE_ARC 8.0 1.04719755 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 1.625 0.785398163 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.325 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 1.57079633 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.325 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 1.625 0.785398163 -1
+	RUBBER -1 playfield
+	TURTLE_ARC 4.75 -1.04719755 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.5 1.57079633 -1
+	PLASTIC -1 playfield
+	TURTLE_LINE 0.7 -1
+	PLASTIC -1 playfield
+	TURTLE_POINT -1
+	PLASTIC -1 playfield
+	TURTLE_FORWARD -0.2
+	TURTLE_TURN 1.57079633
+	TURTLE_LINE 0.5 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 5.75 1.04719755 -1
+	PLASTIC -1 playfield
+	INTEGER "captive_ball_target" -1
+	TURTLE_TURN -1.57079633
+	TURTLE_LINE 1.25 captive_ball_target
+	PLASTIC captive_ball_target playfield
+	TURTLE_TURN -1.57079633
+	TURTLE_ARC 7.0 -1.04719755 -1
+	PLASTIC -1 playfield
+	TURTLE_LINE 0.5 -1
+	PLASTIC -1 playfield
+	TURTLE_TURN 1.57079633
+	TURTLE_FORWARD -0.2
+	TURTLE_POINT -1
+	PLASTIC -1 playfield
+	TURTLE_LINE 0.7 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.5 1.57079633 -1
+	PLASTIC -1 playfield
+	TURTLE_FORWARD 0.5625
+	TURTLE_TURN 1.57079633
+	TURTLE_FORWARD 1.5625
+	DOUBLE "captive_ball_x" 0.0
+	DOUBLE "captive_ball_y" 0.0
+	TURTLE_GET_POSITION captive_ball_x captive_ball_y
+	'TODO STANDARD_BALL
+	BALL playfield captive_ball_x captive_ball_y -1.0 -1.0 -1.0 TRUE TRUE ball_spritesheet -1 -1 -1
+	'STANDARD_BALL playfield captive_ball_x captive_ball_y -1
+
+	TURTLE_TELEPORT 5.2 12.3
+	TURTLE_SET_HEADING 4.1887902
+	TURTLE_FORWARD -0.5
+	TURTLE_TURN 1.57079633
+	TURTLE_FORWARD 0.5
+	TURTLE_ARC 0.3 6.28318531 -1
+	RUBBER -1 playfield
+	TURTLE_FORWARD 2.25
+	TURTLE_ARC 0.3 6.28318531 -1
+	RUBBER -1 playfield
+
+	'first rollover lane divider
+	TURTLE_TELEPORT 9.55 4.6
+	TURTLE_SET_HEADING 4.71238898
+	TURTLE_ARC 0.3 3.14159265 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.0 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 3.14159265 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.0 -1
+	PLASTIC -1 playfield
+
+	'second rollover lane divider
+	TURTLE_TELEPORT 11.4 4.6
+	TURTLE_SET_HEADING 4.71238898
+	TURTLE_ARC 0.3 3.14159265 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.0 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 3.14159265 -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.0 -1
+	PLASTIC -1 playfield
+
+	INTEGER "rollover_A" -1
+	LINE 8.925 4.35 8.925 5.475 -1
+	SWITCH -1 playfield rollover_A
+	INTEGER "rollover_B" -1
+	LINE 10.775 4.35 10.775 5.475 -1
+	SWITCH -1 playfield rollover_B
+	INTEGER "rollover_C" -1
+	LINE 12.625 4.35 12.625 5.475 -1
+	SWITCH -1 playfield rollover_C
+
+	INTEGER "left_bumper" -1
+	CIRCLE 10.25 9.0 1.0 left_bumper
+	METAL left_bumper playfield
+	SET_SENSITIVITY left_bumper 4.0
+
+	INTEGER "right_bumper" -1
+	CIRCLE 14.0 9.0 1.0 right_bumper
+	METAL right_bumper playfield
+	SET_SENSITIVITY right_bumper 4.0
+
+	INTEGER "left_flipper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/left-flipper.png" 92 63 13.0 13.0 left_flipper_spritesheet
+	INTEGER "left_flipper_sprite" -1
+	SPRITE left_flipper_spritesheet playfield ABOVE_BALL 0.0 0.0 left_flipper_sprite
+	INTEGER "left_flipper" -1
+	FLIPPER playfield 5.59 32.7 0.5235988 -0.872664 3.1 0.35 0.25 left_flipper
+	SYNC_SPRITE left_flipper_sprite left_flipper
+
+	INTEGER "right_flipper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/right-flipper.png" 92 63 79.0 13.0 right_flipper_spritesheet
+	INTEGER "right_flipper_sprite" -1
+	SPRITE right_flipper_spritesheet playfield ABOVE_BALL 0.0 0.0 right_flipper_sprite
+	INTEGER "right_flipper" -1
+	FLIPPER playfield 12.66 32.7 2.617994 0.872664 3.1 0.35 0.25 right_flipper
+	SYNC_SPRITE right_flipper_sprite right_flipper
+
+	INTEGER "yellow_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/yellow-light.png" 32 32 16.0 16.0 yellow_light_spritesheet
+	INTEGER "A_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/A-light.png" 32 32 16.0 16.0 A_light_spritesheet
+	INTEGER "B_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/B-light.png" 32 32 16.0 16.0 B_light_spritesheet
+	INTEGER "C_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/C-light.png" 32 32 16.0 16.0 C_light_spritesheet
+
+	INTEGER "upper_A_light" -1
+	SPRITE A_light_spritesheet playfield BELOW_BALL 8.925 3.35 upper_A_light
+	SET_SPRITE_FRAME upper_A_light 1
+	INTEGER "B_light" -1
+	SPRITE B_light_spritesheet playfield BELOW_BALL 10.775 3.35 B_light
+	SET_SPRITE_FRAME B_light 1
+	INTEGER "upper_C_light" -1
+	SPRITE C_light_spritesheet playfield BELOW_BALL 12.625 3.35 upper_C_light
+	SET_SPRITE_FRAME upper_C_light 1
+	INTEGER "lower_A_light" -1
+	SPRITE A_light_spritesheet playfield BELOW_BALL 3.25 26.6 lower_A_light
+	SET_SPRITE_FRAME lower_A_light 1
+	INTEGER "lower_C_light" -1
+	SPRITE C_light_spritesheet playfield BELOW_BALL 15.0 26.6 lower_C_light
+	SET_SPRITE_FRAME lower_C_light 1
+
+	INTEGER "left_outlane_light" -1
+	SPRITE yellow_light_spritesheet playfield BELOW_BALL 1.2 27.1 left_outlane_light
+
+	INTEGER "right_outlane_light" -1
+	SPRITE yellow_light_spritesheet playfield BELOW_BALL 17.05 27.1 right_outlane_light
+
+	INTEGER "captive_ball_light" -1
+	SPRITE yellow_light_spritesheet playfield BELOW_BALL 7.357291 12.786538 captive_ball_light
+
+	INTEGER "red_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/red-light.png" 24 24 12.0 12.0 red_light_spritesheet
+
+	INTEGER "eject_hole_light" -1
+	SPRITE red_light_spritesheet playfield BELOW_BALL 15.5 6.8 eject_hole_light
+
+	INTEGER "bumper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/bumper.png" 84 84 42.0 42.0 bumper_spritesheet
+
+	INTEGER "left_bumper_sprite" -1
+	SPRITE bumper_spritesheet playfield ABOVE_BALL 10.25 9.0 left_bumper_sprite
+
+	INTEGER "right_bumper_sprite" -1
+	SPRITE bumper_spritesheet playfield ABOVE_BALL 14.0 9.0 right_bumper_sprite
+
+	INTEGER "left_slingshot_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/left-slingshot.png" 48 106 42.5 94.0 left_slingshot_spritesheet
+	INTEGER "left_slingshot_sprite" -1
+	SPRITE left_slingshot_spritesheet playfield BELOW_BALL 5.4 29.6 left_slingshot_sprite
+
+	INTEGER "right_slingshot_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/right-slingshot.png" 48 106 5.5 94.0 right_slingshot_spritesheet
+	INTEGER "right_slingshot_sprite" -1
+	SPRITE right_slingshot_spritesheet playfield BELOW_BALL 12.85 29.6 right_slingshot_sprite
+
+	INTEGER "white_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/white-light.png" 24 24 12.0 12.0 white_light_spritesheet
+
+	INTEGER "bonus_1k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 30.7 bonus_1k_light
+	INTEGER "bonus_2k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 29.7 bonus_2k_light
+	INTEGER "bonus_3k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 28.7 bonus_3k_light
+	INTEGER "bonus_4k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 27.7 bonus_4k_light
+	INTEGER "bonus_5k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 26.7 bonus_5k_light
+	INTEGER "bonus_6k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 25.7 bonus_6k_light
+	INTEGER "bonus_7k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 24.7 bonus_7k_light
+	INTEGER "bonus_8k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 23.7 bonus_8k_light
+	INTEGER "bonus_9k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 22.7 bonus_9k_light
+	INTEGER "bonus_10k_light" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL 9.125 21.7 bonus_10k_light
+
+	INTEGER "bonus_2X_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/2X-light.png" 32 32 16.0 16.0 bonus_2X_light_spritesheet
+
+	INTEGER "bonus_2X_light" -1
+	SPRITE bonus_2X_light_spritesheet playfield BELOW_BALL 9.125 32.7 bonus_2X_light
+
+	INTEGER "shoot_again_light" -1
+	SPRITE bonus_2X_light_spritesheet playfield BELOW_BALL 9.125 34.7 shoot_again_light
+BREAK
+INPUT_DOWN INPUT_LEFT_FLIPPER:
+	NOT ball_in_play temp_int
+	OR temp_int tilt temp_int
+	IF temp_int
+		BREAK
+	ENDIF
+	SET_MOBILE_ANGULAR_ACCELERATION left_flipper -640.0
+BREAK
+INPUT_UP INPUT_LEFT_FLIPPER:
+	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
+BREAK
+INPUT_DOWN INPUT_RIGHT_FLIPPER:
+	NOT ball_in_play temp_int
+	OR temp_int tilt temp_int
+	IF temp_int
+		BREAK
+	ENDIF
+	SET_MOBILE_ANGULAR_ACCELERATION right_flipper 640.0
+BREAK
+INPUT_UP INPUT_RIGHT_FLIPPER:
+	SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
+BREAK
+INPUT_DOWN ANALOG_PLUNGER:
+TIMER_DONE plunger_sample_timer:
+	MOBILE_BOUNCE plunger FALSE
+	SET_MOBILE_SPRING_CONSTANT plunger 0.0
+	GET_ANALOG_INPUT ANALOG_PLUNGER plunger_speed
+	D_LESS plunger_speed -8.0 temp_int
+	IF temp_int
+		SET_DOUBLE plunger_speed -8.0
+	ENDIF
+	SET_MOBILE_VELOCITY plunger 0.0 plunger_speed
+	START_TIMER plunger_sample_timer 0.05
+BREAK
+INPUT_UP ANALOG_PLUNGER:
+	SET_MOBILE_VELOCITY plunger 0.0 0.0
+	PAUSE_TIMER plunger_sample_timer
+BREAK
+INPUT_DOWN INPUT_PLUNGER:
+	MOBILE_BOUNCE plunger TRUE
+	SET_MOBILE_SPRING_CONSTANT plunger 400.0
+BREAK
+INPUT_DOWN INPUT_COIN:
+	'TODO (assets) coin return SFX?
+	GOSUB add_credit
+BREAK
+INPUT_DOWN INPUT_START:
+	IF credits
+		LESS player_count 4 temp_int
+		IF temp_int
+			GOSUB charge_credit
+		ENDIF
+	ELSE
+		NOT free_play temp_int
+		IF temp_int
+			BREAK
+		ENDIF
+	ENDIF
+	LESS ball_in_play 2 temp_int
+	IF temp_int
+		LESS player_count 4 temp_int
+		IF temp_int
+			ADD player_count 1 player_count
+			GOSUB update_queued_players
+		ENDIF
+	ELSE
+		GOSUB save_score
+		IF playfield_validated
+			GOSUB tilt_routine
+			SET_INTEGER ball_in_play 0
+			SET_INTEGER player 0
+			SET_INTEGER player_count 1
+			GOSUB update_queued_players
+			GOSUB update_ball_in_play
+			BREAK
+		ELSE
+			SET_INTEGER suppress_playfield_reset TRUE
+			SET_INTEGER bonus 0
+			SET_INTEGER ball_in_play 0
+			SET_INTEGER player 0
+			SET_INTEGER player_count 1
+			GOSUB update_queued_players
+			GOSUB update_ball_in_play
+		ENDIF
+	ENDIF
+	NOT ball_in_play temp_int
+	IF temp_int
+		SET_ARRAY_ELEMENT score 0 0
+		SET_SPRITE_FRAME rollover_light_1 0
+		REEL_RESET reel_1
+	ENDIF
+BREAK
+INPUT_DOWN INPUT_NUDGE:
+	'TODO consider limiting magnitude of nudge vector
+	GET_ANALOG_INPUT ANALOG_NUDGE_X nudge_x
+	GET_ANALOG_INPUT ANALOG_NUDGE_Y nudge_y
+	NUDGE nudge_x nudge_y 0.15
+BREAK
+INPUT_UP INPUT_NUDGE:
+	HALT_NUDGE
+BREAK
+LABEL score_routine
+	IF tilt
+		RETURN
+	ENDIF
+	DIVIDE score_pending 10 temp_int
+	MODULO temp_int 10 temp_int
+	ADD match_position temp_int match_position
+	MODULO match_position 10 match_position
+	GET_ARRAY_ELEMENT score player temp_int
+	LESS temp_int replay_score temp_int_2
+	IF temp_int_2
+		ADD temp_int score_pending temp_int_2
+		LESS temp_int_2 replay_score temp_int_2
+		NOT temp_int_2 temp_int_2
+		IF temp_int_2
+			'TODO (assets) knocker
+			GOSUB add_credit
+		ENDIF
+	ENDIF
+	GET_ARRAY_ELEMENT score player temp_int
+	ADD temp_int score_pending temp_int
+	SET_ARRAY_ELEMENT score player temp_int
+	GET_ARRAY_ELEMENT reels player temp_int_2
+	REEL_SHOW_NUMBER temp_int_2 temp_int
+RETURN
+LABEL add_bonus
+	LESS bonus 15 temp_int
+	NOT tilt temp_int_2
+	AND temp_int temp_int_2 temp_int
+	IF temp_int
+		ADD bonus 1 bonus
+		GOSUB update_bonus_ladder
+	ENDIF
+RETURN
+LABEL update_bonus_ladder
+	SET_INTEGER temp_int 10
+	SET_INTEGER temp_int_2 bonus
+	WHILE temp_int
+		GREATER temp_int temp_int_2 temp_int_3
+		NOT temp_int_3 temp_int_3
+		ADD bonus_1k_light temp_int temp_int_4
+		SUBTRACT temp_int_4 1 temp_int_4 'obtain index of light
+		IF temp_int_3
+			SUBTRACT temp_int_2 temp_int temp_int_2
+			SET_SPRITE_FRAME temp_int_4 1
+		ELSE
+			SET_SPRITE_FRAME temp_int_4 0
+		ENDIF
+		SUBTRACT temp_int 1 temp_int
+	WEND
+RETURN
+LABEL update_bonus_multiplier
+	EQUAL bonus_multiplier 2 temp_int
+	IF temp_int
+		SET_SPRITE_FRAME bonus_2X_light 1
+	ELSE
+		SET_SPRITE_FRAME bonus_2X_light 0
+	ENDIF
+RETURN
+'TODO research bumpers/slingshots and determine if cooldown timers should be implemented
+COLLISION left_bumper:
+	IF tilt
+		BREAK
+	ENDIF
+	IF left_bank_clear
+		SET_INTEGER score_pending 100
+	ELSE
+		SET_INTEGER score_pending 10
+	ENDIF
+	GOSUB score_routine
+	BUMPER_ACTION playfield left_bumper 0.15 16.0
+BREAK
+COLLISION right_bumper:
+	IF tilt
+		BREAK
+	ENDIF
+	IF right_bank_clear
+		SET_INTEGER score_pending 100
+	ELSE
+		SET_INTEGER score_pending 10
+	ENDIF
+	GOSUB score_routine
+	BUMPER_ACTION playfield right_bumper 0.15 16.0
+BREAK
+COLLISION left_slingshot:
+	IF tilt
+		BREAK
+	ENDIF
+	SET_INTEGER score_pending 10
+	GOSUB score_routine
+	SLINGSHOT_ACTION playfield left_slingshot 0.5 28.0 0.5
+	LOOP_SPRITE_ANIMATION left_slingshot_sprite 0 0 3 30.0 1
+BREAK
+COLLISION right_slingshot:
+	IF tilt
+		BREAK
+	ENDIF
+	SET_INTEGER score_pending 10
+	GOSUB score_routine
+	SLINGSHOT_ACTION playfield right_slingshot -0.5 28.0 0.5
+	LOOP_SPRITE_ANIMATION right_slingshot_sprite 0 0 3 30.0 1
+BREAK
+COLLISION left_overhang_upper_face:
+COLLISION right_overhang_upper_face:
+COLLISION left_bank_inner_face:
+COLLISION right_bank_inner_face:
+	SET_INTEGER score_pending 10
+	GOSUB score_routine
+BREAK
+COLLISION left_target_1:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE left_target_1 FALSE
+	SET_SPRITE_FRAME left_target_1_sprite 0
+	ADD left_drop_targets_down 1 left_drop_targets_down
+	GOSUB check_left_bank
+BREAK
+COLLISION left_target_2:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE left_target_2 FALSE
+	SET_SPRITE_FRAME left_target_2_sprite 0
+	ADD left_drop_targets_down 1 left_drop_targets_down
+	GOSUB check_left_bank
+BREAK
+COLLISION left_target_3:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE left_target_3 FALSE
+	SET_SPRITE_FRAME left_target_3_sprite 0
+	ADD left_drop_targets_down 1 left_drop_targets_down
+	GOSUB check_left_bank
+BREAK
+COLLISION left_target_4:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE left_target_4 FALSE
+	SET_SPRITE_FRAME left_target_4_sprite 0
+	ADD left_drop_targets_down 1 left_drop_targets_down
+	GOSUB check_left_bank
+BREAK
+COLLISION left_target_5:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE left_target_5 FALSE
+	SET_SPRITE_FRAME left_target_5_sprite 0
+	ADD left_drop_targets_down 1 left_drop_targets_down
+	GOSUB check_left_bank
+BREAK
+LABEL check_left_bank
+	IF tilt
+		RETURN
+	ENDIF
+	EQUAL left_drop_targets_down 5 temp_int
+	IF temp_int
+		SET_INTEGER score_pending 500
+		GOSUB score_routine
+		SET_INTEGER left_bank_clear TRUE
+		SET_SPRITE_FRAME left_outlane_light 1
+		SET_SPRITE_FRAME left_bumper_sprite 1
+		IF right_bank_clear
+			SET_INTEGER eject_hole_lit TRUE
+			SET_SPRITE_FRAME eject_hole_light 1
+		ENDIF
+	ENDIF
+RETURN
+COLLISION right_target_1:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE right_target_1 FALSE
+	SET_SPRITE_FRAME right_target_1_sprite 0
+	ADD right_drop_targets_down 1 right_drop_targets_down
+	GOSUB check_right_bank
+BREAK
+COLLISION right_target_2:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE right_target_2 FALSE
+	SET_SPRITE_FRAME right_target_2_sprite 0
+	ADD right_drop_targets_down 1 right_drop_targets_down
+	GOSUB check_right_bank
+BREAK
+COLLISION right_target_3:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE right_target_3 FALSE
+	SET_SPRITE_FRAME right_target_3_sprite 0
+	ADD right_drop_targets_down 1 right_drop_targets_down
+	GOSUB check_right_bank
+BREAK
+COLLISION right_target_4:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE right_target_4 FALSE
+	SET_SPRITE_FRAME right_target_4_sprite 0
+	ADD right_drop_targets_down 1 right_drop_targets_down
+	GOSUB check_right_bank
+BREAK
+COLLISION right_target_5:
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+	TANGIBLE right_target_5 FALSE
+	SET_SPRITE_FRAME right_target_5_sprite 0
+	ADD right_drop_targets_down 1 right_drop_targets_down
+	GOSUB check_right_bank
+BREAK
+LABEL check_right_bank
+	IF tilt
+		RETURN
+	ENDIF
+	EQUAL right_drop_targets_down 5 temp_int
+	IF temp_int
+		SET_INTEGER score_pending 500
+		GOSUB score_routine
+		SET_INTEGER right_bank_clear TRUE
+		SET_SPRITE_FRAME right_outlane_light 1
+		SET_SPRITE_FRAME right_bumper_sprite 1
+		IF left_bank_clear
+			SET_INTEGER eject_hole_lit TRUE
+			SET_SPRITE_FRAME eject_hole_light 1
+		ENDIF
+	ENDIF
+RETURN
+COLLISION trough_hole:
+	'TODO (on drain) quickly cycle through inactive players instead of skipping?
+	NOT trough_hole_occupied temp_int
+	IF temp_int
+		SET_INTEGER trough_hole_occupied TRUE
+		IF playfield_validated
+			SET_INTEGER playfield_validated FALSE
+			IF ball_in_play
+				START_TIMER bonus_count_timer 0.25
+			ELSE
+				SET_ARRAY_ELEMENT score 0 0
+				REEL_RESET reel_1
+			ENDIF
+		ELSE
+			START_TIMER launch_timer 0.5
+		ENDIF
+	ENDIF
+BREAK
+TIMER_DONE bonus_count_timer:
+	IF bonus
+		SUBTRACT bonus 1 bonus
+		GOSUB update_bonus_ladder
+		SET_INTEGER temp_int 1000
+		MULTIPLY temp_int bonus_multiplier temp_int
+		SET_INTEGER score_pending temp_int
+		GOSUB score_routine
+		START_TIMER bonus_count_timer 0.25
+	ELSE
+		IF ball_in_play
+			IF extra_ball
+				SET_INTEGER extra_ball FALSE
+				SET_SPRITE_FRAME shoot_again_light 0
+				SET_SPRITE_FRAME backglass_shoot_again_light 0
+			ELSE
+				ADD player 1 player
+				EQUAL player player_count temp_int
+				IF temp_int
+					SET_INTEGER player 0
+					ADD ball_in_play 1 ball_in_play
+				ENDIF
+				GOSUB update_ball_in_play
+			ENDIF
+		ELSE
+			SET_INTEGER player 0
+			SET_INTEGER ball_in_play 1
+			GOSUB update_ball_in_play
+			GOSUB update_match_lights
+		ENDIF
+		LESS ball_in_play 6 temp_int
+		IF temp_int
+			GOSUB trough_kickout_routine
+			START_TIMER reset_timer 1.5
+		ELSE
+			GOSUB save_score
+			SET_INTEGER ball_in_play 0
+			SET_INTEGER player 0
+			GOSUB update_ball_in_play
+			GET_ARRAY_ELEMENT match_sequence match_position match_digit
+			GOSUB update_match_lights
+			'TODO delay between multiple matches (for knocker and credit reel)
+			SET_INTEGER temp_int 0
+			LESS temp_int player_count temp_int_2
+			WHILE temp_int_2
+				GET_ARRAY_ELEMENT score temp_int temp_int_3
+				DIVIDE temp_int_3 10 temp_int_3
+				MODULO temp_int_3 10 temp_int_3
+				EQUAL temp_int_3 match_digit temp_int_3
+				IF temp_int_3
+					'TODO (assets) knocker
+					GOSUB add_credit
+				ENDIF
+				ADD temp_int 1 temp_int
+				LESS temp_int player_count temp_int_2
+			WEND
+			SET_INTEGER player_count 0
+			GOSUB update_queued_players
+			'TODO (QA) ensure this value is equal to the acceleration from releasing the flipper normally
+			SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
+			SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
+		ENDIF
+	ENDIF
+BREAK
+TIMER_DONE reset_timer:
+	SET_INTEGER extra_ball FALSE
+	SET_SPRITE_FRAME shoot_again_light 0
+	SET_SPRITE_FRAME backglass_shoot_again_light 0
+	SET_INTEGER bonus 0
+	GOSUB update_bonus_ladder
+	SET_INTEGER bonus_multiplier 1
+	GOSUB update_bonus_multiplier
+	CLEAR_ARRAY rollovers FALSE
+	SET_INTEGER rollovers_hit 0
+	SET_SPRITE_FRAME upper_A_light 1
+	SET_SPRITE_FRAME B_light 1
+	SET_SPRITE_FRAME upper_C_light 1
+	SET_SPRITE_FRAME lower_A_light 1
+	SET_SPRITE_FRAME lower_C_light 1
+	SET_SPRITE_FRAME left_outlane_light 0
+	SET_SPRITE_FRAME right_outlane_light 0
+	GOSUB reset_drop_targets
+	SET_INTEGER captive_ball_lit FALSE
+	SET_SPRITE_FRAME captive_ball_light 0
+	SET_INTEGER tilt FALSE
+	SET_SPRITE_FRAME tilt_light 0
+BREAK
+LABEL reset_drop_targets
+	SET_INTEGER left_bank_clear FALSE
+	SET_INTEGER right_bank_clear FALSE
+	SET_INTEGER eject_hole_lit FALSE
+	SET_SPRITE_FRAME eject_hole_light 0
+	SET_SPRITE_FRAME left_bumper_sprite 0
+	SET_SPRITE_FRAME right_bumper_sprite 0
+	SET_INTEGER left_drop_targets_down 0
+	TANGIBLE left_target_1 TRUE
+	TANGIBLE left_target_2 TRUE
+	TANGIBLE left_target_3 TRUE
+	TANGIBLE left_target_4 TRUE
+	TANGIBLE left_target_5 TRUE
+	SET_INTEGER right_drop_targets_down 0
+	TANGIBLE right_target_1 TRUE
+	TANGIBLE right_target_2 TRUE
+	TANGIBLE right_target_3 TRUE
+	TANGIBLE right_target_4 TRUE
+	TANGIBLE right_target_5 TRUE
+	SET_SPRITE_FRAME left_target_1_sprite 1
+	SET_SPRITE_FRAME left_target_2_sprite 1
+	SET_SPRITE_FRAME left_target_3_sprite 1
+	SET_SPRITE_FRAME left_target_4_sprite 1
+	SET_SPRITE_FRAME left_target_5_sprite 1
+	SET_SPRITE_FRAME right_target_1_sprite 1
+	SET_SPRITE_FRAME right_target_2_sprite 1
+	SET_SPRITE_FRAME right_target_3_sprite 1
+	SET_SPRITE_FRAME right_target_4_sprite 1
+	SET_SPRITE_FRAME right_target_5_sprite 1
+RETURN
+TIMER_DONE launch_timer:
+	GOSUB trough_kickout_routine
+BREAK
+LABEL trough_kickout_routine
+	SET_INTEGER trough_hole_occupied FALSE
+	TANGIBLE trough_hole FALSE
+	MAGNET_POWER trough_hole_magnet 0.0
+	KICKOUT_ACTION playfield 9.525 38.0 playfield 27.8388220359 -15.0375907688
+	START_TIMER trough_kickout_timer 0.25
+RETURN
+TIMER_DONE trough_kickout_timer:
+	TANGIBLE trough_hole TRUE
+	MAGNET_POWER trough_hole_magnet 96.5225
+BREAK
+COLLISION eject_hole:
+	NOT eject_hole_occupied temp_int
+	IF temp_int
+		SET_INTEGER eject_hole_occupied TRUE
+		SET_INTEGER score_pending 500
+		GOSUB score_routine
+		GOSUB add_bonus
+		IF eject_hole_lit
+			SET_INTEGER eject_hole_lit FALSE
+			SET_SPRITE_FRAME eject_hole_light 0
+			IF tournament_mode
+				SET_INTEGER score_pending 10000
+			ELSE
+				SET_INTEGER extra_ball TRUE
+				SET_SPRITE_FRAME shoot_again_light 1
+				SET_SPRITE_FRAME backglass_shoot_again_light 1
+			ENDIF
+		ENDIF
+		START_TIMER eject_count_timer 0.75
+	ENDIF
+BREAK
+TIMER_DONE eject_count_timer:
+	GOSUB eject_routine
+BREAK
+LABEL eject_routine
+	TANGIBLE eject_hole FALSE
+	MAGNET_POWER eject_hole_magnet 0.0
+	KICKOUT_ACTION playfield 14.47003 5.655059 playfield 8.55050358 23.4923155
+	SET_INTEGER eject_hole_occupied FALSE
+	START_TIMER eject_timer 0.25
+RETURN
+TIMER_DONE eject_timer:
+	TANGIBLE eject_hole TRUE
+	MAGNET_POWER eject_hole_magnet 96.5225
+BREAK
+SWITCH_DOWN rollover_A:
+SWITCH_DOWN left_inlane_rollover:
+	SET_INTEGER playfield_validated TRUE
+	SET_INTEGER score_pending 500
+	GOSUB score_routine
+	GET_ARRAY_ELEMENT rollovers 0 temp_int
+	NOT temp_int temp_int
+	IF temp_int
+		SET_ARRAY_ELEMENT rollovers 0 TRUE
+		ADD rollovers_hit 1 rollovers_hit
+		SET_SPRITE_FRAME upper_A_light 0
+		SET_SPRITE_FRAME lower_A_light 0
+		GOSUB check_rollovers
+	ENDIF
+BREAK
+SWITCH_DOWN rollover_B:
+	SET_INTEGER playfield_validated TRUE
+	SET_INTEGER score_pending 500
+	GOSUB score_routine
+	GET_ARRAY_ELEMENT rollovers 1 temp_int
+	NOT temp_int temp_int
+	IF temp_int
+		SET_ARRAY_ELEMENT rollovers 1 TRUE
+		ADD rollovers_hit 1 rollovers_hit
+		SET_SPRITE_FRAME B_light 0
+		GOSUB check_rollovers
+	ENDIF
+BREAK
+SWITCH_DOWN rollover_C:
+SWITCH_DOWN right_inlane_rollover:
+	SET_INTEGER playfield_validated TRUE
+	SET_INTEGER score_pending 500
+	GOSUB score_routine
+	GET_ARRAY_ELEMENT rollovers 2 temp_int
+	NOT temp_int temp_int
+	IF temp_int
+		SET_ARRAY_ELEMENT rollovers 2 TRUE
+		ADD rollovers_hit 1 rollovers_hit
+		SET_SPRITE_FRAME upper_C_light 0
+		SET_SPRITE_FRAME lower_C_light 0
+		GOSUB check_rollovers
+	ENDIF
+BREAK
+SWITCH_DOWN left_outlane_rollover:
+	IF left_bank_clear
+		SET_INTEGER score_pending 5000
+	ELSE
+		SET_INTEGER score_pending 500
+	ENDIF
+	GOSUB score_routine
+BREAK
+SWITCH_DOWN right_outlane_rollover:
+	IF right_bank_clear
+		SET_INTEGER score_pending 5000
+	ELSE
+		SET_INTEGER score_pending 500
+	ENDIF
+	GOSUB score_routine
+BREAK
+LABEL check_rollovers
+	EQUAL rollovers_hit 3 temp_int
+	LESS bonus_multiplier 2 temp_int_2
+	AND temp_int temp_int_2 temp_int
+	IF temp_int
+		SET_INTEGER captive_ball_lit TRUE
+		SET_SPRITE_FRAME captive_ball_light 1
+	ENDIF
+RETURN
+COLLISION captive_ball_target:
+	SET_INTEGER score_pending 500
+	GOSUB score_routine
+	IF captive_ball_lit
+		SET_INTEGER captive_ball_lit FALSE
+		SET_SPRITE_FRAME captive_ball_light 0
+		LESS bonus_multiplier 2 temp_int
+		IF temp_int
+			ADD bonus_multiplier 1 bonus_multiplier
+			GOSUB update_bonus_multiplier
+		ENDIF
+	ENDIF
+BREAK
+LABEL tilt_routine
+	SET_INTEGER tilt TRUE
+	SET_SPRITE_FRAME tilt_light 1
+	SET_INTEGER bonus 0
+	GOSUB update_bonus_ladder
+	SET_INTEGER bonus_multiplier 1
+	GOSUB update_bonus_multiplier
+	SET_SPRITE_FRAME upper_A_light 0
+	SET_SPRITE_FRAME B_light 0
+	SET_SPRITE_FRAME upper_C_light 0
+	SET_SPRITE_FRAME left_outlane_light 0
+	SET_SPRITE_FRAME lower_A_light 0
+	SET_SPRITE_FRAME lower_C_light 0
+	SET_SPRITE_FRAME right_outlane_light 0
+	SET_SPRITE_FRAME left_bumper_sprite 0
+	SET_SPRITE_FRAME right_bumper_sprite 0
+	CLEAR_ARRAY rollovers FALSE
+	SET_INTEGER left_bank_clear FALSE
+	SET_INTEGER right_bank_clear FALSE
+	SET_SPRITE_FRAME eject_hole_light 0
+	SET_INTEGER eject_hole_lit FALSE
+	'TODO research if extra ball should be lost on tilt
+	SET_SPRITE_FRAME shoot_again_light 0
+	SET_SPRITE_FRAME backglass_shoot_again_light 0
+	SET_INTEGER extra_ball FALSE
+	'TODO (QA) ensure this value is equal to the acceleration from releasing the flipper normally	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
+	SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
+RETURN
+TILT_BOB_CONTACT 0:
+	'TODO research tilting during game over
+	GOSUB tilt_routine
+BREAK
+'TODO delay between reel resets
+TIMER_DONE reel_reset_timer:
+	EQUAL next_reel_reset 2 temp_int
+	IF temp_int
+		REEL_RESET reel_2
+		BREAK
+	ENDIF
+	EQUAL next_reel_reset 3 temp_int
+	IF temp_int
+		REEL_RESET reel_3
+		BREAK
+	ENDIF
+	REEL_RESET reel_4
+BREAK
+REEL_RESET_DONE reel_1:
+	SET_ARRAY_ELEMENT score 1 0
+	SET_SPRITE_FRAME rollover_light_2 0
+	SET_INTEGER next_reel_reset 2
+	START_TIMER reel_reset_timer 0.25 'TODO research reel reset delay duration
+	'REEL_RESET reel_2
+BREAK
+REEL_RESET_DONE reel_2:
+	SET_ARRAY_ELEMENT score 2 0
+	SET_SPRITE_FRAME rollover_light_3 0
+	SET_INTEGER next_reel_reset 3
+	START_TIMER reel_reset_timer 0.25 'TODO research reel reset delay duration
+	'REEL_RESET reel_3
+BREAK
+REEL_RESET_DONE reel_3:
+	SET_ARRAY_ELEMENT score 3 0
+	SET_SPRITE_FRAME rollover_light_4 0
+	SET_INTEGER next_reel_reset 4
+	START_TIMER reel_reset_timer 0.25 'TODO research reel reset delay duration
+	'REEL_RESET reel_4
+BREAK
+REEL_RESET_DONE reel_4:
+	'TODO delay before proceeding? (research)
+	IF suppress_playfield_reset
+		SET_INTEGER suppress_playfield_reset FALSE
+		SET_INTEGER player 0
+		ADD ball_in_play 1 ball_in_play
+		GOSUB update_ball_in_play
+		GOSUB update_match_lights
+	ELSE
+		START_TIMER bonus_count_timer 0.25
+	ENDIF
+BREAK
+LABEL save_score
+	GET_ARRAY_ELEMENT score 0 temp_int
+	SAVE_RECORD record "records/Magical-Robot-records.txt" "" temp_int
+	GET_ARRAY_ELEMENT score 1 temp_int
+	SAVE_RECORD record "records/Magical-Robot-records.txt" "" temp_int
+	GET_ARRAY_ELEMENT score 2 temp_int
+	SAVE_RECORD record "records/Magical-Robot-records.txt" "" temp_int
+	GET_ARRAY_ELEMENT score 3 temp_int
+	SAVE_RECORD record "records/Magical-Robot-records.txt" "" temp_int
+RETURN
+LABEL update_ball_in_play
+	EQUAL ball_in_play 0 temp_int
+	SET_SPRITE_FRAME game_over_light temp_int
+	EQUAL ball_in_play 1 temp_int
+	SET_SPRITE_FRAME ball_1_light temp_int
+	EQUAL ball_in_play 2 temp_int
+	SET_SPRITE_FRAME ball_2_light temp_int
+	EQUAL ball_in_play 3 temp_int
+	SET_SPRITE_FRAME ball_3_light temp_int
+	EQUAL ball_in_play 4 temp_int
+	SET_SPRITE_FRAME ball_4_light temp_int
+	EQUAL ball_in_play 5 temp_int
+	SET_SPRITE_FRAME ball_5_light temp_int
+	IF ball_in_play
+		EQUAL player 0 temp_int
+		SET_SPRITE_FRAME player_1_light temp_int
+		REEL_LIGHT reel_1 temp_int
+		EQUAL player 1 temp_int
+		SET_SPRITE_FRAME player_2_light temp_int
+		REEL_LIGHT reel_2 temp_int
+		EQUAL player 2 temp_int
+		SET_SPRITE_FRAME player_3_light temp_int
+		REEL_LIGHT reel_3 temp_int
+		EQUAL player 3 temp_int
+		SET_SPRITE_FRAME player_4_light temp_int
+		REEL_LIGHT reel_4 temp_int
+	ELSE
+		SET_SPRITE_FRAME player_1_light 0
+		REEL_LIGHT reel_1 FALSE
+		SET_SPRITE_FRAME player_2_light 0
+		REEL_LIGHT reel_2 FALSE
+		SET_SPRITE_FRAME player_3_light 0
+		REEL_LIGHT reel_3 FALSE
+		SET_SPRITE_FRAME player_4_light 0
+		REEL_LIGHT reel_4 FALSE
+		'TODO research when lights should be set (may be necessary during reel reset)
+	ENDIF
+RETURN
+LABEL update_match_lights
+	IF ball_in_play
+		SET_SPRITE_VISIBILITY match_00_light FALSE
+		SET_SPRITE_VISIBILITY match_10_light FALSE
+		SET_SPRITE_VISIBILITY match_20_light FALSE
+		SET_SPRITE_VISIBILITY match_30_light FALSE
+		SET_SPRITE_VISIBILITY match_40_light FALSE
+		SET_SPRITE_VISIBILITY match_50_light FALSE
+		SET_SPRITE_VISIBILITY match_60_light FALSE
+		SET_SPRITE_VISIBILITY match_70_light FALSE
+		SET_SPRITE_VISIBILITY match_80_light FALSE
+		SET_SPRITE_VISIBILITY match_90_light FALSE
+	ELSE
+		EQUAL match_digit 0 temp_int
+		SET_SPRITE_VISIBILITY match_00_light temp_int
+		EQUAL match_digit 1 temp_int
+		SET_SPRITE_VISIBILITY match_10_light temp_int
+		EQUAL match_digit 2 temp_int
+		SET_SPRITE_VISIBILITY match_20_light temp_int
+		EQUAL match_digit 3 temp_int
+		SET_SPRITE_VISIBILITY match_30_light temp_int
+		EQUAL match_digit 4 temp_int
+		SET_SPRITE_VISIBILITY match_40_light temp_int
+		EQUAL match_digit 5 temp_int
+		SET_SPRITE_VISIBILITY match_50_light temp_int
+		EQUAL match_digit 6 temp_int
+		SET_SPRITE_VISIBILITY match_60_light temp_int
+		EQUAL match_digit 7 temp_int
+		SET_SPRITE_VISIBILITY match_70_light temp_int
+		EQUAL match_digit 8 temp_int
+		SET_SPRITE_VISIBILITY match_80_light temp_int
+		EQUAL match_digit 9 temp_int
+		SET_SPRITE_VISIBILITY match_90_light temp_int
+	ENDIF
+RETURN
+LABEL add_credit
+	LESS credits 15 temp_int
+	IF temp_int
+		ADD credits 1 credits
+		GOSUB update_credit_reel
+	ENDIF
+RETURN
+LABEL charge_credit
+	IF credits
+		SUBTRACT credits 1 credits
+		GOSUB update_credit_reel
+	ENDIF
+RETURN
+LABEL update_credit_reel
+	SET_SPRITE_FRAME credit_reel credits
+RETURN
+REEL_ROLLOVER reel_1:
+	SET_SPRITE_FRAME rollover_light_1 1
+BREAK
+REEL_ROLLOVER reel_2:
+	SET_SPRITE_FRAME rollover_light_2 1
+BREAK
+REEL_ROLLOVER reel_3:
+	SET_SPRITE_FRAME rollover_light_3 1
+BREAK
+REEL_ROLLOVER reel_4:
+	SET_SPRITE_FRAME rollover_light_4 1
+BREAK
+LABEL update_queued_players
+	EQUAL 1 player_count temp_int
+	SET_SPRITE_FRAME queued_1_light temp_int
+	EQUAL 2 player_count temp_int
+	SET_SPRITE_FRAME queued_2_light temp_int
+	EQUAL 3 player_count temp_int
+	SET_SPRITE_FRAME queued_3_light temp_int
+	EQUAL 4 player_count temp_int
+	SET_SPRITE_FRAME queued_4_light temp_int
+RETURN
