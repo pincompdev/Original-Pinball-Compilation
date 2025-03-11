@@ -9129,7 +9129,9 @@ void default_config(Script* script)
 
 int main(int argc, char* argv[])
 {
-    //TODO investigate cases where ball triggers one-way hole collider without becoming trapped in hole
+    //TODO investigate cases where ball triggers one-way hole collider without becoming trapped in hole (note: this has been observed in real pinball)
+    //TODO test game not responding after being left open while computer is asleep
+    //TODO solution for ball-to-ball collisions across layer portals
     uint64_t initial_count = SDL_GetPerformanceCounter();
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK);

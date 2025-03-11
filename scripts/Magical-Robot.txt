@@ -1,14 +1,12 @@
 LOAD:
-	'TODO investigate white pixel appearing above and right of bonus ladder (likely a point collider never declared solid)
-	'TODO match collision of left structure to playfield graphic
+	'TODO add sound
 	'TODO reassess gate collision
-	'TODO (assets) metal frame + lockdown bar around outside
-	'TODO (assets) stop plunger spring from emerging outside table when plunger is pulled
-	'TODO (assets) change 0 on credit reel for blank
+	'TODO (assets) add outer spring to plunger
 	'TODO have all players' score reels reset simultaneously
-	'TODO make flipper fall if raised when tilting
+	'TODO raise flipper if button is held when game starts/resets
 	'TODO consider making flipper fall slower
 	'TODO light all reels during game over
+	'TODO award replays at 50k again every time score rolls over
 
 	INTEGER "temp_int" -1
 	INTEGER "temp_int_2" -1
@@ -18,7 +16,6 @@ LOAD:
 	DOUBLE "temp_y" 0.0
 	STRING "temp_string" ""
 
-	'TODO (assets) background
 	'TODO (assets) rolling sound
 
 	TABLE 20.25 41.0 STANDARD_NUDGE
@@ -41,178 +38,189 @@ LOAD:
 	PRINT temp_string
 
 	INTEGER "backglass" -1
-	BACKGLASS -2.875 -26.0 26.0 26.0 backglass
+	BACKGLASS -2.875 -27.5 26.0 26.0 backglass
 	ARRAY "reels" 4 -1
 	INTEGER "reel_1" -1
-	'TODO redraw reel shading
 	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_1
 	REEL_ADD_SHADING reel_1 "fonts/common/small-reel-shading.png"
 	SET_ARRAY_ELEMENT reels 0 reel_1
-	ADD_SCORE_REEL backglass reel_1 2.875 5.75
+	ADD_SCORE_REEL backglass reel_1 2.875 4.75
 	INTEGER "reel_2" -1
 	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_2
 	REEL_ADD_SHADING reel_2 "fonts/common/small-reel-shading.png"
 	SET_ARRAY_ELEMENT reels 1 reel_2
-	ADD_SCORE_REEL backglass reel_2 15.625 5.75
+	ADD_SCORE_REEL backglass reel_2 15.625 4.75
 	INTEGER "reel_3" -1
 	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_3
 	REEL_ADD_SHADING reel_3 "fonts/common/small-reel-shading.png"
 	SET_ARRAY_ELEMENT reels 2 reel_3
-	ADD_SCORE_REEL backglass reel_3 2.875 20.25
+	ADD_SCORE_REEL backglass reel_3 2.875 21.25
 	INTEGER "reel_4" -1
 	SCORE_REEL 5  48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_4
 	REEL_ADD_SHADING reel_4 "fonts/common/small-reel-shading.png"
 	SET_ARRAY_ELEMENT reels 3 reel_4
-	ADD_SCORE_REEL backglass reel_4 15.625 20.25
+	ADD_SCORE_REEL backglass reel_4 15.625 21.25
 	DESIGNATE_BACKGLASS backglass
+
+	BACKGROUND "graphics/MagicalRobot/bg.png"
+
+	INTEGER "backglass_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/backglass.png" 928 928 464.0 464.0 backglass_spritesheet
+	INTEGER "backglass_sprite" -1
+	SPRITE backglass_spritesheet playfield BELOW_BALL 10.125 -15.5 backglass_sprite
 
 	INTEGER "ball_1_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/1-light.png" 32 32 16.0 16.0 ball_1_light_spritesheet
 	INTEGER "ball_1_light" -1
-	SPRITE ball_1_light_spritesheet playfield BELOW_BALL 12.0 -2.0 ball_1_light
+	SPRITE ball_1_light_spritesheet playfield BELOW_BALL 16.5 -12.95 ball_1_light
 
 	INTEGER "ball_2_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/2-light.png" 32 32 16.0 16.0 ball_2_light_spritesheet
 	INTEGER "ball_2_light" -1
-	SPRITE ball_2_light_spritesheet playfield BELOW_BALL 13.5 -2.0 ball_2_light
+	SPRITE ball_2_light_spritesheet playfield BELOW_BALL 18.5 -12.95 ball_2_light
 
 	INTEGER "ball_3_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/3-light.png" 32 32 16.0 16.0 ball_3_light_spritesheet
 	INTEGER "ball_3_light" -1
-	SPRITE ball_3_light_spritesheet playfield BELOW_BALL 15.0 -2.0 ball_3_light
+	SPRITE ball_3_light_spritesheet playfield BELOW_BALL 20.5 -12.95 ball_3_light
 
 	INTEGER "ball_4_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/4-light.png" 32 32 16.0 16.0 ball_4_light_spritesheet
 	INTEGER "ball_4_light" -1
-	SPRITE ball_4_light_spritesheet playfield BELOW_BALL 16.5 -2.0 ball_4_light
+	SPRITE ball_4_light_spritesheet playfield BELOW_BALL 17.5 -12.95 ball_4_light
 
 	INTEGER "ball_5_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/5-light.png" 32 32 16.0 16.0 ball_5_light_spritesheet
 	INTEGER "ball_5_light" -1
-	SPRITE ball_5_light_spritesheet playfield BELOW_BALL 18.0 -2.0 ball_5_light
+	SPRITE ball_5_light_spritesheet playfield BELOW_BALL 19.5 -12.95 ball_5_light
 
+	INTEGER "queued_1_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/1-player-light.png" 32 32 16.0 16.0 queued_1_light_spritesheet
 	INTEGER "queued_1_light" -1
-	SPRITE ball_1_light_spritesheet playfield BELOW_BALL 0.0 -2.0 queued_1_light
+	SPRITE queued_1_light_spritesheet playfield BELOW_BALL -1.25 -26.0 queued_1_light
 
+	INTEGER "queued_2_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/2-player-light.png" 32 32 16.0 16.0 queued_2_light_spritesheet
 	INTEGER "queued_2_light" -1
-	SPRITE ball_2_light_spritesheet playfield BELOW_BALL 1.5 -2.0 queued_2_light
+	SPRITE queued_2_light_spritesheet playfield BELOW_BALL 0.25 -26.0 queued_2_light
 
+	INTEGER "queued_3_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/3-player-light.png" 32 32 16.0 16.0 queued_3_light_spritesheet
 	INTEGER "queued_3_light" -1
-	SPRITE ball_3_light_spritesheet playfield BELOW_BALL 3.0 -2.0 queued_3_light
+	SPRITE queued_3_light_spritesheet playfield BELOW_BALL 1.75 -26.0 queued_3_light
 
+	INTEGER "queued_4_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/MagicalRobot/4-player-light.png" 32 32 16.0 16.0 queued_4_light_spritesheet
 	INTEGER "queued_4_light" -1
-	SPRITE ball_4_light_spritesheet playfield BELOW_BALL 4.5 -2.0 queued_4_light
+	SPRITE queued_4_light_spritesheet playfield BELOW_BALL 3.25 -26.0 queued_4_light
 
 	INTEGER "game_over_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/game-over-light.png" 64 32 32.0 16.0 game_over_light_spritesheet
 	INTEGER "game_over_light" -1
-	SPRITE game_over_light_spritesheet playfield BELOW_BALL 20.0 -2.0 game_over_light
+	SPRITE game_over_light_spritesheet playfield BELOW_BALL 20.0 -10.5 game_over_light
 	SET_SPRITE_FRAME game_over_light 1
 
 	INTEGER "backglass_shoot_again_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/shoot-again-light.png" 64 32 32.0 16.0 backglass_shoot_again_light_spritesheet
 	INTEGER "backglass_shoot_again_light" -1
-	SPRITE backglass_shoot_again_light_spritesheet playfield BELOW_BALL 7.0 -2.0 backglass_shoot_again_light
+	SPRITE backglass_shoot_again_light_spritesheet playfield BELOW_BALL 12.0 -10.5 backglass_shoot_again_light
 
 	INTEGER "tilt_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/tilt-light.png" 64 32 32.0 16.0 tilt_light_spritesheet
 	INTEGER "tilt_light" -1
-	SPRITE tilt_light_spritesheet playfield BELOW_BALL 10.0 -2.0 tilt_light
+	SPRITE tilt_light_spritesheet playfield BELOW_BALL 16.0 -10.5 tilt_light
 
 	INTEGER "rollover_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/100k-light.png" 96 32 48.0 16.0 rollover_light_spritesheet
 	INTEGER "rollover_light_1" -1
-	SPRITE rollover_light_spritesheet playfield BELOW_BALL 2.0 -21.25 rollover_light_1
+	SPRITE rollover_light_spritesheet playfield BELOW_BALL 2.0 -23.75 rollover_light_1
 	INTEGER "rollover_light_2" -1
-	SPRITE rollover_light_spritesheet playfield BELOW_BALL 14.75 -21.25 rollover_light_2
+	SPRITE rollover_light_spritesheet playfield BELOW_BALL 14.75 -23.75 rollover_light_2
 	INTEGER "rollover_light_3" -1
-	SPRITE rollover_light_spritesheet playfield BELOW_BALL 2.0 -6.75 rollover_light_3
+	SPRITE rollover_light_spritesheet playfield BELOW_BALL 2.0 -7.25 rollover_light_3
 	INTEGER "rollover_light_4" -1
-	SPRITE rollover_light_spritesheet playfield BELOW_BALL 14.75 -6.75 rollover_light_4
+	SPRITE rollover_light_spritesheet playfield BELOW_BALL 14.75 -7.25 rollover_light_4
 
 	INTEGER "player_1_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/1-up-light.png" 48 48 24.0 24.0 player_1_light_spritesheet
 	INTEGER "player_1_light" -1
-	SPRITE player_1_light_spritesheet playfield BELOW_BALL -1.0 -19.5 player_1_light
+	SPRITE player_1_light_spritesheet playfield BELOW_BALL -1.0 -22.0 player_1_light
 	INTEGER "player_2_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/2-up-light.png" 48 48 24.0 24.0 player_2_light_spritesheet
 	INTEGER "player_2_light" -1
-	SPRITE player_2_light_spritesheet playfield BELOW_BALL 11.75 -19.5 player_2_light
+	SPRITE player_2_light_spritesheet playfield BELOW_BALL 11.75 -22.0 player_2_light
 	INTEGER "player_3_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/3-up-light.png" 48 48 24.0 24.0 player_3_light_spritesheet
 	INTEGER "player_3_light" -1
-	SPRITE player_3_light_spritesheet playfield BELOW_BALL -1.0 -5.0 player_3_light
+	SPRITE player_3_light_spritesheet playfield BELOW_BALL -1.0 -5.5 player_3_light
 	INTEGER "player_4_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/4-up-light.png" 48 48 24.0 24.0 player_4_light_spritesheet
 	INTEGER "player_4_light" -1
-	SPRITE player_4_light_spritesheet playfield BELOW_BALL 11.75 -5.0 player_4_light
+	SPRITE player_4_light_spritesheet playfield BELOW_BALL 11.75 -5.5 player_4_light
 
-	'TODO (assets) realistic credit reel (shading, bold sans serif typeface)
 	INTEGER "credit_reel_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/credit-reel.png" 32 20 16.0 10.0 credit_reel_spritesheet
 	INTEGER "credit_reel" -1
-	SPRITE credit_reel_spritesheet playfield BELOW_BALL  20.0 -3.0 credit_reel
-
-	'TODO (assets) research proper size/spacing of match lights
+	SPRITE credit_reel_spritesheet playfield BELOW_BALL  10.0 -14.5 credit_reel
 
 	INTEGER "match_00_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/00-light.png" 24 24 12.0 12.0 match_00_light_spritesheet
 	INTEGER "match_00_light" -1
-	SPRITE match_00_light_spritesheet playfield BELOW_BALL 2.0 -25.0 match_00_light
+	SPRITE match_00_light_spritesheet playfield BELOW_BALL 6.0 -26.5 match_00_light
 	SET_SPRITE_VISIBILITY match_00_light FALSE
 
 	INTEGER "match_10_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/10-light.png" 24 24 12.0 12.0 match_10_light_spritesheet
 	INTEGER "match_10_light" -1
-	SPRITE match_10_light_spritesheet playfield BELOW_BALL 4.0 -25.0 match_10_light
+	SPRITE match_10_light_spritesheet playfield BELOW_BALL 7.5 -26.5 match_10_light
 	SET_SPRITE_VISIBILITY match_10_light FALSE
 
 	INTEGER "match_20_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/20-light.png" 24 24 12.0 12.0 match_20_light_spritesheet
 	INTEGER "match_20_light" -1
-	SPRITE match_20_light_spritesheet playfield BELOW_BALL 6.0 -25.0 match_20_light
+	SPRITE match_20_light_spritesheet playfield BELOW_BALL 9.0 -26.5 match_20_light
 	SET_SPRITE_VISIBILITY match_20_light FALSE
 
 	INTEGER "match_30_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/30-light.png" 24 24 12.0 12.0 match_30_light_spritesheet
 	INTEGER "match_30_light" -1
-	SPRITE match_30_light_spritesheet playfield BELOW_BALL 8.0 -25.0 match_30_light
+	SPRITE match_30_light_spritesheet playfield BELOW_BALL 10.5 -26.5 match_30_light
 	SET_SPRITE_VISIBILITY match_30_light FALSE
 
 	INTEGER "match_40_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/40-light.png" 24 24 12.0 12.0 match_40_light_spritesheet
 	INTEGER "match_40_light" -1
-	SPRITE match_40_light_spritesheet playfield BELOW_BALL 10.0 -25.0 match_40_light
+	SPRITE match_40_light_spritesheet playfield BELOW_BALL 12.0 -26.5 match_40_light
 	SET_SPRITE_VISIBILITY match_40_light FALSE
 
 	INTEGER "match_50_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/50-light.png" 24 24 12.0 12.0 match_50_light_spritesheet
 	INTEGER "match_50_light" -1
-	SPRITE match_50_light_spritesheet playfield BELOW_BALL 12.0 -25.0 match_50_light
+	SPRITE match_50_light_spritesheet playfield BELOW_BALL 13.5 -26.5 match_50_light
 	SET_SPRITE_VISIBILITY match_50_light FALSE
 
 	INTEGER "match_60_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/60-light.png" 24 24 12.0 12.0 match_60_light_spritesheet
 	INTEGER "match_60_light" -1
-	SPRITE match_60_light_spritesheet playfield BELOW_BALL 14.0 -25.0 match_60_light
+	SPRITE match_60_light_spritesheet playfield BELOW_BALL 15.0 -26.5 match_60_light
 	SET_SPRITE_VISIBILITY match_60_light TRUE
 
 	INTEGER "match_70_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/70-light.png" 24 24 12.0 12.0 match_70_light_spritesheet
 	INTEGER "match_70_light" -1
-	SPRITE match_70_light_spritesheet playfield BELOW_BALL 16.0 -25.0 match_70_light
+	SPRITE match_70_light_spritesheet playfield BELOW_BALL 16.5 -26.5 match_70_light
 	SET_SPRITE_VISIBILITY match_70_light FALSE
 
 	INTEGER "match_80_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/80-light.png" 24 24 12.0 12.0 match_80_light_spritesheet
 	INTEGER "match_80_light" -1
-	SPRITE match_80_light_spritesheet playfield BELOW_BALL 18.0 -25.0 match_80_light
+	SPRITE match_80_light_spritesheet playfield BELOW_BALL 18.0 -26.5 match_80_light
 	SET_SPRITE_VISIBILITY match_80_light FALSE
 
 	INTEGER "match_90_light_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/90-light.png" 24 24 12.0 12.0 match_90_light_spritesheet
 	INTEGER "match_90_light" -1
-	SPRITE match_90_light_spritesheet playfield BELOW_BALL 20.0 -25.0 match_90_light
+	SPRITE match_90_light_spritesheet playfield BELOW_BALL 19.5 -26.5 match_90_light
 	SET_SPRITE_VISIBILITY match_90_light FALSE
 
 	ARRAY "match_sequence" 10 0
@@ -493,8 +501,6 @@ LOAD:
 	INTEGER "trough_hole_magnet" -1
 	MAGNET playfield 9.525 38.0 96.5225 0.6 0.5 TRUE trough_hole_magnet
 
-	'TODO (before drawing playfield) adjust bouncers for reliability
-
 	INTEGER "left_bouncer_outer_arc" -1
 	TURTLE_TELEPORT 0.50 32.68
 	TURTLE_SET_HEADING 3.577925
@@ -704,7 +710,6 @@ LOAD:
 	SET_SENSITIVITY left_bank_inner_face 4.75
 
 	INTEGER "left_target_spritesheet" -1
-	'TODO (assets) consider brightening drop targets when standing
 	LOAD_SPRITESHEET "graphics/MagicalRobot/left-drop-target.png" 20 31 6.0 31.0 left_target_spritesheet
 
 	TURTLE_TURN 1.57079633
@@ -778,14 +783,12 @@ LOAD:
 	RUBBER -1 playfield
 	TURTLE_LINE 2.5 -1
 	PLASTIC -1 playfield
-	TURTLE_ARC 8.6 1.04719755 -1
+	TURTLE_ARC 8.6 0.83 -1
 	PLASTIC -1 playfield
 	TURTLE_POINT -1
 	PLASTIC -1 playfield
-	'TURTLE_LINE 5.6577 -1
-	'RUBBER_BAND -1 playfield
-	'TURTLE_ARC 0.3 -2.61799388 -1
-	'RUBBER -1 playfield
+	TURTLE_ARC 0.3 -1.01456265 -1
+	RUBBER -1 playfield
 
 	INTEGER "right_overhang_lower_post" -1
 	TURTLE_TELEPORT 17.78 25.6
@@ -1757,7 +1760,8 @@ LABEL tilt_routine
 	SET_SPRITE_FRAME shoot_again_light 0
 	SET_SPRITE_FRAME backglass_shoot_again_light 0
 	SET_INTEGER extra_ball FALSE
-	'TODO (QA) ensure this value is equal to the acceleration from releasing the flipper normally	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
+	'TODO (QA) ensure this value is equal to the acceleration from releasing the flipper normally
+	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
 	SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
 RETURN
 TILT_BOB_CONTACT 0:
