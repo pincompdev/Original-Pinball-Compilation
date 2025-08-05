@@ -25,8 +25,8 @@ double SIM_TIME_PER_PHYSICS_TICK = 1.0 / (24.0 * 60.0); //1440 Hz physics regard
 bool FULLSCREEN = false;
 bool BORDERLESS = false;
 int FREQUENCY = 44100;
-int OUTPUT_CHANNELS = 2;
-int SAMPLE_SIZE = 4096;
+int OUTPUT_CHANNELS = 2; //TODO consider mono
+int SAMPLE_SIZE = 2048;
 int CHANNELS_PER_TRACK = 64;
 int PIXELS_PER_INCH = 32;
 double PI = 3.14159265;
@@ -37,6 +37,7 @@ double HUD_SCALE = 1.0;
 double CAMERA_PAN_SENSITIVITY = 8.0;
 double CAMERA_ZOOM_SENSITIVITY = 2.0;
 double GLOBAL_FRICTION = 0.6; //[0.0, 1.0], affects solids only
+double SHAKE_INTENSITY = 0.125;
 std::string CONTROLS_PATH = "controls/controls.txt";
 
 class Point
@@ -222,7 +223,7 @@ public:
         int channel = Mix_GroupAvailable(track);
         if (channel < 0)
         {
-            channel = Mix_AllocateChannels(1) - 1;
+            channel = Mix_AllocateChannels(Mix_AllocateChannels(-1) + 1) - 1;
             Mix_GroupChannel(channel, track);
             channel = Mix_GroupAvailable(track);
             if (channel < 0)
@@ -275,10 +276,10 @@ public:
     double mass = 2.6; //ounces
     double moment_ratio = 0.4;
     Sound* impact_sound = nullptr;
-    double min_volume_energy = 432.166146;
+    double min_volume_energy = 25.0;
     double max_volume_energy = 13829.3167;
     Sound* roll_sound = nullptr;
-    double max_roll_volume_speed = 72.931255;
+    double max_roll_volume_speed = 72.931255 * 0.875;
     double detection_speed = 0.0;
     double friction_multiplier = 1.0;
     int layer = 0;
@@ -1075,11 +1076,11 @@ public:
     double motion_bounce_coefficient = 1.0;
     double angular_motion_bounce_coefficient = 1.0;
     Sound* rotation_stop_sound = nullptr;
-    double rotation_stop_min_volume_velocity = 0.05;
-    double rotation_stop_max_volume_velocity = 4.0;
+    double rotation_stop_min_volume_velocity = 1.0;
+    double rotation_stop_max_volume_velocity = 32.0;
     Sound* translation_stop_sound = nullptr;
-    double translation_stop_max_volume_velocity = 0.125;
-    double translation_stop_min_volume_velocity = 4.0;
+    double translation_stop_min_volume_velocity = 2.0;
+    double translation_stop_max_volume_velocity = 70.0;
     std::vector<std::pair<Magnet*, Point>> synced_magnets;
     //Note: live catch elasticity should cause offset to cross back over flipper in approximately 1/3 the time it takes for the flipper to fire on a modern table
     bool live_catch_enabled = false;
@@ -1128,7 +1129,7 @@ public:
                     {
                         volume = 128;
                     }
-                    impact_sound->play(volume);
+                    translation_stop_sound->play(volume);
                 }
             }
             offset.x = translation_range_top_left.x - origin.x;
@@ -1152,7 +1153,7 @@ public:
                     {
                         volume = 128;
                     }
-                    impact_sound->play(volume);
+                    translation_stop_sound->play(volume);
                 }
             }
             offset.x = translation_range_bottom_right.x - origin.x;
@@ -1176,7 +1177,7 @@ public:
                     {
                         volume = 128;
                     }
-                    impact_sound->play(volume);
+                    translation_stop_sound->play(volume);
                 }
             }
             offset.y = translation_range_top_left.y - origin.y;
@@ -1200,7 +1201,7 @@ public:
                     {
                         volume = 128;
                     }
-                    impact_sound->play(volume);
+                    translation_stop_sound->play(volume);
                 }
             }
             offset.y = translation_range_bottom_right.y - origin.y;
@@ -1236,7 +1237,7 @@ public:
                         {
                             volume = 128;
                         }
-                        impact_sound->play(volume); //TODO play sound for translational motion bounces?
+                        rotation_stop_sound->play(volume); //TODO play sound for translational motion bounces?
                     }
                 }
             }
@@ -1260,7 +1261,7 @@ public:
                         {
                             volume = 128;
                         }
-                        impact_sound->play(volume);
+                        rotation_stop_sound->play(volume);
                     }
                 }
             }
@@ -2213,6 +2214,7 @@ public:
     double* time_showing; //seconds
     bool resetting = false;
     Sound* roll_sound = nullptr;
+    std::vector<Sound*> chime_sounds = {};
     bool invert_roll = false;
     bool lit = false;
     SDL_Texture* shading_texture = nullptr;
@@ -2251,6 +2253,17 @@ public:
             number /= base;
         }
     }
+    void initialize(int number)
+    {
+        int reel = reel_count;
+        while(reel--)
+        {
+            showing[reel] = number % base;
+            to_show[reel] = number % base;
+            time_showing[reel] = roll_time;
+            number /= base;
+        }
+    }
     void pass_time(double ms)
     {
         bool stopped = true;
@@ -2268,6 +2281,10 @@ public:
                 {
                     roll_sound->play();
                 }
+                if (!resetting && chime_sounds.size() > static_cast<unsigned int>(i) && chime_sounds[i])
+                {
+                    chime_sounds[i]->play();
+                }
             }
             if (time_showing[i] < roll_time)
             {
@@ -2283,7 +2300,7 @@ public:
     }
     void add_sound(const char filename[])
     {
-        roll_sound = new Sound(filename, TRACK_PHYSICAL);
+        roll_sound = new Sound(filename, TRACK_PHYSICAL); //TODO consider using TRACK_TABLE
     }
     void add_shading_texture(SDL_Renderer* renderer, const char filename[])
     {
@@ -2576,6 +2593,7 @@ enum Command
     AND_SET_SEGMENT,
     AND_CLEAR,
     REEL_SHOW_NUMBER,
+    REEL_INITIALIZE,
     REEL_RESET,
     REEL_ADD_SHADING,
     REEL_LIGHT,
@@ -2594,6 +2612,14 @@ enum Command
     //Sound
     PLAY_SOUND,
     STOP_SOUND,
+    REEL_ADD_CHIME_SOUND,
+    SET_MOBILE_SOUNDS,
+    WOOD_SOUND,
+    METAL_SOUND,
+    PLASTIC_SOUND,
+    RUBBER_SOUND,
+    RUBBER_BAND_SOUND,
+    NUDGE_SOUND,
     PLAY_MUSIC,
     TRANSITION_MUSIC,
     STOP_MUSIC,
@@ -2957,6 +2983,8 @@ public:
         define_syntax(AND_CLEAR, 2, TYPE_INTEGER, TYPE_INTEGER); //AND ID in, on/off
         command_table["REEL_SHOW_NUMBER"] = REEL_SHOW_NUMBER;
         define_syntax(REEL_SHOW_NUMBER, 2, TYPE_INTEGER, TYPE_INTEGER); //reel ID in, number
+        command_table["REEL_INITIALIZE"] = REEL_INITIALIZE;
+        define_syntax(REEL_INITIALIZE, 2, TYPE_INTEGER, TYPE_INTEGER); //reel ID in, number
         command_table["REEL_RESET"] = REEL_RESET;
         define_syntax(REEL_RESET, 1, TYPE_INTEGER); //reel ID in
         command_table["REEL_ADD_SHADING"] = REEL_ADD_SHADING;
@@ -2987,6 +3015,22 @@ public:
         define_syntax(PLAY_SOUND, 2, TYPE_INTEGER, TYPE_INTEGER); //sound ID in, volume
         command_table["STOP_SOUND"] = STOP_SOUND;
         define_syntax(STOP_SOUND, 0); //no arguments; stops all sounds
+        command_table["REEL_ADD_CHIME_SOUND"] = REEL_ADD_CHIME_SOUND;
+        define_syntax(REEL_ADD_CHIME_SOUND, 2, TYPE_INTEGER, TYPE_INTEGER); //score reel ID in, chime sound ID in
+        command_table["SET_MOBILE_SOUNDS"] = SET_MOBILE_SOUNDS;
+        define_syntax(SET_MOBILE_SOUNDS, 3, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER); //mobile ID in, translation stop sound ID in, rotation stop sound ID in
+        command_table["WOOD_SOUND"] = WOOD_SOUND;
+        define_syntax(WOOD_SOUND, 1, TYPE_INTEGER); // ID in
+        command_table["METAL_SOUND"] = METAL_SOUND;
+        define_syntax(METAL_SOUND, 1, TYPE_INTEGER); //ID in
+        command_table["PLASTIC_SOUND"] = PLASTIC_SOUND;
+        define_syntax(PLASTIC_SOUND, 1, TYPE_INTEGER); //ID in
+        command_table["RUBBER_SOUND"] = RUBBER_SOUND;
+        define_syntax(RUBBER_SOUND, 1, TYPE_INTEGER); //ID in
+        command_table["RUBBER_BAND_SOUND"] = RUBBER_BAND_SOUND;
+        define_syntax(RUBBER_BAND_SOUND, 1, TYPE_INTEGER); //ID in
+        command_table["NUDGE_SOUND"] = NUDGE_SOUND;
+        define_syntax(NUDGE_SOUND, 1, TYPE_INTEGER); //ID in
         command_table["PLAY_MUSIC"] = PLAY_MUSIC;
         define_syntax(PLAY_MUSIC, 2, TYPE_INTEGER, TYPE_INTEGER); //music ID in, volume
         command_table["TRANSITION_MUSIC"] = TRANSITION_MUSIC;
@@ -3279,6 +3323,7 @@ public:
 class InputHandler
 {
 public:
+    //TODO fix multiple consecutive INPUT_DOWN events with no INPUT_UP (as when buffering with developer console)
     std::unordered_map<SDL_Keycode, std::vector<std::tuple<Input, bool, double>>> keyboard_binds; //maps keyboard inputs to game inputs with bool for negative edge and double for analog value (set when applicable)
     std::unordered_map<SDL_GameControllerButton, std::vector<std::tuple<Input, bool, double>>> gamepad_button_binds; //same binding scheme for gamepad digital inputs
     std::unordered_map<SDL_GameControllerAxis, std::vector<std::tuple<Input, bool, double, double>>> gamepad_axis_binds; //maps gamepad analog axes to inputs with bool for invert, double for deadzone, and double for sensitivity (as multiplier)
@@ -4502,12 +4547,19 @@ public:
     }
     void render(SDL_Renderer* renderer, View* view)
     {
+        View temp_view = *view;
+        //TODO option to disable screen shake when nudging
+        if (nudge_duration)
+        {
+            temp_view.center.x -= current_nudge.x * SHAKE_INTENSITY;
+            temp_view.center.y -= current_nudge.y * SHAKE_INTENSITY;
+        }
         for (unsigned int i = 0; i < layers.size(); ++i)
         {
             Layer* current_layer = layers[i];
             if (current_layer)
             {
-                current_layer->render(renderer, view);
+                current_layer->render(renderer, &temp_view);
             }
         }
         if (view->debug)
@@ -4525,13 +4577,13 @@ public:
                 Spinner* current_spinner = spinners[i];
                 if (current_spinner)
                 {
-                    current_spinner->render(renderer, view);
+                    current_spinner->render(renderer, &temp_view);
                 }
             }
         }
         if (backglass)
         {
-            backglass->render(renderer, view);
+            backglass->render(renderer, &temp_view);
             backglass->HUD_render(renderer, view);
         }
     }
@@ -4610,6 +4662,13 @@ public:
     std::deque<std::pair<Event, int>> trigger_queue;
     std::unordered_map<int, bool> timers; //maps integer variable index to timer running bool
     int next_switch_id = 0;
+    int wood_sound_index = -1;
+    int metal_sound_index = -1;
+    int plastic_sound_index = -1;
+    int rubber_sound_index = -1;
+    int rubber_band_sound_index = -1;
+    int nudge_sound_index = -1;
+    double nudge_max_volume_speed = 4.0;
     Script(SDL_Renderer* renderer, SDL_Window* window, Syntax* syntax, std::string filename) : renderer(renderer), syntax(syntax)
     {
         std::ifstream file(filename);
@@ -5532,7 +5591,7 @@ public:
                     int roll_sound_index = instruction->int_args[5];
                     if (roll_sound_index >= 0 && static_cast<unsigned int>(roll_sound_index) < sounds.size())
                     {
-                        ball->roll_sound = sounds[roll_sound_index];
+                        ball->add_roll_sound(sounds[roll_sound_index]);
                     } else
                     {
                         if (roll_sound_index != -1)
@@ -6042,6 +6101,10 @@ public:
                     }
                 }
                 Collider* collider = colliders[collider_index];
+                if (wood_sound_index != -1)
+                {
+                    collider->impact_sound = sounds[wood_sound_index];
+                }
                 collider->bounce_coefficient = 1.25;
                 collider->friction_coefficient = 0.44 * GLOBAL_FRICTION - 1.0;
                 //TODO (Phase VII) default impact sounds
@@ -6076,6 +6139,10 @@ public:
                     }
                 }
                 Collider* collider = colliders[collider_index];
+                if (metal_sound_index != -1)
+                {
+                    collider->impact_sound = sounds[metal_sound_index];
+                }
                 collider->bounce_coefficient = 1.15;
                 collider->friction_coefficient = 0.22 * GLOBAL_FRICTION - 1.0;
                 //TODO (Phase VII) default impact sounds
@@ -6109,6 +6176,10 @@ public:
                     }
                 }
                 Collider* collider = colliders[collider_index];
+                if (plastic_sound_index != -1)
+                {
+                    collider->impact_sound = sounds[plastic_sound_index];
+                }
                 collider->bounce_coefficient = 1.24;
                 collider->friction_coefficient = 0.30 * GLOBAL_FRICTION - 1.0;
                 //TODO (Phase VII) default impact sounds
@@ -6142,7 +6213,10 @@ public:
                     }
                 }
                 Collider* collider = colliders[collider_index];
-                //TODO more realistic test
+                if (rubber_sound_index != -1)
+                {
+                    collider->impact_sound = sounds[rubber_sound_index];
+                }
                 collider->bounce_coefficient = 1.47;
                 collider->friction_coefficient = 1.92 * GLOBAL_FRICTION - 1.0;
                 //TODO (Phase VII) default impact sounds
@@ -6176,6 +6250,10 @@ public:
                     }
                 }
                 Collider* collider = colliders[collider_index];
+                if (rubber_band_sound_index != -1)
+                {
+                    collider->impact_sound = sounds[rubber_band_sound_index];
+                }
                 LineCollider* line_collider = dynamic_cast<LineCollider*>(collider);
                 if (line_collider)
                 {
@@ -6490,6 +6568,11 @@ public:
                 if (table)
                 {
                     table->nudge(instruction->double_args[0], instruction->double_args[1], instruction->double_args[2]);
+                    if (nudge_sound_index != -1)
+                    {
+                        double square_magnitude = instruction->double_args[0] * instruction->double_args[0] + instruction->double_args[1] * instruction->double_args[1];
+                        sounds[nudge_sound_index]->play(std::min(128.0, 128.0 * square_magnitude / (nudge_max_volume_speed * nudge_max_volume_speed)));
+                    }
                 } else
                 {
                     console_log("SCRIPT ERROR: no table declared");
@@ -7339,6 +7422,17 @@ public:
                 score_reel->show_number(instruction->int_args[1]);
             }
             break;
+        case REEL_INITIALIZE:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= score_reels.size())
+                {
+                    console_log("SCRIPT ERROR: score reel out of range");
+                    return -1;
+                }
+                ScoreReel* score_reel = score_reels[instruction->int_args[0]];
+                score_reel->initialize(instruction->int_args[1]);
+            }
+            break;
         case REEL_RESET:
             {
                 if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= score_reels.size())
@@ -7584,6 +7678,118 @@ public:
         case STOP_SOUND:
             {
                 Mix_HaltGroup(TRACK_TABLE);
+            }
+            break;
+        case SET_MOBILE_SOUNDS:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= colliders.size())
+                {
+                    console_log("SCRIPT ERROR: collider out of range");
+                    return -1;
+                }
+                MobileCollider* mobile_collider = dynamic_cast<MobileCollider*>(colliders[instruction->int_args[0]]);
+                if (!mobile_collider)
+                {
+                    console_log("SCRIPT ERROR: non-mobile collider passed as mobile collider");
+                    return -1;
+                }
+
+                Sound* sound1 = nullptr;
+                if (!(instruction->int_args[1] < 0 || static_cast<unsigned int>(instruction->int_args[1]) >= sounds.size()))
+                {
+                    sound1 = sounds[instruction->int_args[1]];
+                }
+                Sound* sound2 = nullptr;
+                if (!(instruction->int_args[2] < 0 || static_cast<unsigned int>(instruction->int_args[2]) >= sounds.size()))
+                {
+                    sound2 = sounds[instruction->int_args[2]];
+                }
+
+                mobile_collider->translation_stop_sound = sound1;
+                mobile_collider->rotation_stop_sound = sound2;
+            }
+            break;
+        case REEL_ADD_CHIME_SOUND:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= score_reels.size())
+                {
+                    console_log("SCRIPT ERROR: score reel out of range");
+                    return -1;
+                }
+                ScoreReel* score_reel = score_reels[instruction->int_args[0]];
+                if (instruction->int_args[1] >= 0 && static_cast<unsigned int>(instruction->int_args[1]) >= sounds.size())
+                {
+                    console_log("SCRIPT ERROR: sound out of range");
+                    return -1;
+                }
+                int sound_index = instruction->int_args[1];
+                if (sound_index >= 0)
+                {
+                    score_reel->chime_sounds.push_back(sounds[sound_index]);
+                } else
+                {
+                    score_reel->chime_sounds.push_back(nullptr);
+                }
+            }
+            break;
+        case WOOD_SOUND:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= sounds.size())
+                {
+                    console_log("SCRIPT ERROR: sound out of range");
+                    return -1;
+                }
+                wood_sound_index = instruction->int_args[0];
+            }
+            break;
+        case METAL_SOUND:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= sounds.size())
+                {
+                    console_log("SCRIPT ERROR: sound out of range");
+                    return -1;
+                }
+                metal_sound_index = instruction->int_args[0];
+            }
+            break;
+        case PLASTIC_SOUND:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= sounds.size())
+                {
+                    console_log("SCRIPT ERROR: sound out of range");
+                    return -1;
+                }
+                plastic_sound_index = instruction->int_args[0];
+            }
+            break;
+        case RUBBER_SOUND:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= sounds.size())
+                {
+                    console_log("SCRIPT ERROR: sound out of range");
+                    return -1;
+                }
+                rubber_sound_index = instruction->int_args[0];
+            }
+            break;
+        case RUBBER_BAND_SOUND:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= sounds.size())
+                {
+                    console_log("SCRIPT ERROR: sound out of range");
+                    return -1;
+                }
+                rubber_band_sound_index = instruction->int_args[0];
+            }
+            break;
+        case NUDGE_SOUND:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= sounds.size())
+                {
+                    console_log("SCRIPT ERROR: sound out of range");
+                    return -1;
+                }
+                nudge_sound_index = instruction->int_args[0];
             }
             break;
         case PLAY_MUSIC:
@@ -8640,6 +8846,10 @@ public:
                 flipper->bounce_coefficient = 1.47;
                 flipper->friction_coefficient = 1.92 * GLOBAL_FRICTION - 1.0;
                 flipper->solid = true;
+                if (rubber_sound_index != -1)
+                {
+                    flipper->impact_sound = sounds[rubber_sound_index];
+                }
                 colliders.push_back(flipper);
                 colliders.back()->id = colliders.size() - 1;
                 table->layers[layer]->add_collider(flipper);

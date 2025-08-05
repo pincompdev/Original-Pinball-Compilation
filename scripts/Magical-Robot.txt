@@ -1,13 +1,4 @@
 LOAD:
-	'TODO add sound
-	'TODO reassess gate collision
-	'TODO (assets) add outer spring to plunger
-	'TODO have all players' score reels reset simultaneously
-	'TODO raise flipper if button is held when game starts/resets
-	'TODO consider making flipper fall slower
-	'TODO light all reels during game over
-	'TODO award replays at 50k again every time score rolls over
-
 	INTEGER "temp_int" -1
 	INTEGER "temp_int_2" -1
 	INTEGER "temp_int_3" -1
@@ -16,10 +7,11 @@ LOAD:
 	DOUBLE "temp_y" 0.0
 	STRING "temp_string" ""
 
-	'TODO (assets) rolling sound
+	INTEGER "left_button_down" 0
+	INTEGER "right_button_down" 0
 
 	TABLE 20.25 41.0 STANDARD_NUDGE
-	TILT_BOB 1.5 31.0 -1.0 -1.0 -1.0 -1.0 'TODO (QA) balance tolerance
+	TILT_BOB 1.5 31.0 -1.0 -1.0 -1.0 -1.0
 	INTEGER "playfield" -1
 	LAYER 0.0 0.0 20.25 41.0 GRADIENT_CONSTANT 0.0 23.5261821 10.125 20.5 playfield '3.5 degree slope
 	INTEGER "hump_incline" -1
@@ -27,40 +19,70 @@ LOAD:
 	INTEGER "hump_decline" -1
 	LAYER 0.0 0.0 20.25 41.0 GRADIENT_CONSTANT 25.1090613811 9.96311570285 10.125 20.5 hump_decline
 
-	'TODO change from 3-ball to 5-ball
-
 	INTEGER "record" -1
 	LOAD_RECORD "records/Magical-Robot-records.txt" 1 "_" 0 record
+	INTEGER "high_score" 0
 	PRINT "Magical Robot"
 	PRINT "High score:"
-	GET_RECORD record 1 -1 temp_int
-	INTEGER_TO_STRING temp_int temp_string
+	GET_RECORD record 1 -1 high_score
+	INTEGER_TO_STRING high_score temp_string
 	PRINT temp_string
+
+	INTEGER "chime_high" -1
+	LOAD_SOUND "sound/common/chime-high.wav" TRACK_TABLE chime_high
+	INTEGER "chime_medium" -1
+	LOAD_SOUND "sound/common/chime-medium.wav" TRACK_TABLE chime_medium
+	INTEGER "chime_low" -1
+	LOAD_SOUND "sound/common/chime-low.wav" TRACK_TABLE chime_low
+
+	INTEGER "credit_reel_turn" -1
+	LOAD_SOUND "sound/common/reel-turn.wav" TRACK_PHYSICAL credit_reel_turn
 
 	INTEGER "backglass" -1
 	BACKGLASS -2.875 -27.5 26.0 26.0 backglass
 	ARRAY "reels" 4 -1
 	INTEGER "reel_1" -1
-	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_1
+	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "sound/common/reel-turn.wav" 10 0.125 FALSE reel_1
 	REEL_ADD_SHADING reel_1 "fonts/common/small-reel-shading.png"
+	REEL_ADD_CHIME_SOUND reel_1 -1
+	REEL_ADD_CHIME_SOUND reel_1 chime_low
+	REEL_ADD_CHIME_SOUND reel_1 chime_medium
+	REEL_ADD_CHIME_SOUND reel_1 chime_high
 	SET_ARRAY_ELEMENT reels 0 reel_1
 	ADD_SCORE_REEL backglass reel_1 2.875 4.75
 	INTEGER "reel_2" -1
-	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_2
+	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "sound/common/reel-turn.wav" 10 0.125 FALSE reel_2
 	REEL_ADD_SHADING reel_2 "fonts/common/small-reel-shading.png"
+	REEL_ADD_CHIME_SOUND reel_2 -1
+	REEL_ADD_CHIME_SOUND reel_2 chime_low
+	REEL_ADD_CHIME_SOUND reel_2 chime_medium
+	REEL_ADD_CHIME_SOUND reel_2 chime_high
 	SET_ARRAY_ELEMENT reels 1 reel_2
 	ADD_SCORE_REEL backglass reel_2 15.625 4.75
 	INTEGER "reel_3" -1
-	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_3
+	SCORE_REEL 5 48 48 "fonts/common/small-reel.png" "sound/common/reel-turn.wav" 10 0.125 FALSE reel_3
 	REEL_ADD_SHADING reel_3 "fonts/common/small-reel-shading.png"
+	REEL_ADD_CHIME_SOUND reel_3 -1
+	REEL_ADD_CHIME_SOUND reel_3 chime_low
+	REEL_ADD_CHIME_SOUND reel_3 chime_medium
+	REEL_ADD_CHIME_SOUND reel_3 chime_high
 	SET_ARRAY_ELEMENT reels 2 reel_3
 	ADD_SCORE_REEL backglass reel_3 2.875 21.25
 	INTEGER "reel_4" -1
-	SCORE_REEL 5  48 48 "fonts/common/small-reel.png" "" 10 0.125 FALSE reel_4
+	SCORE_REEL 5  48 48 "fonts/common/small-reel.png" "sound/common/reel-turn.wav" 10 0.125 FALSE reel_4
 	REEL_ADD_SHADING reel_4 "fonts/common/small-reel-shading.png"
+	REEL_ADD_CHIME_SOUND reel_4 -1
+	REEL_ADD_CHIME_SOUND reel_4 chime_low
+	REEL_ADD_CHIME_SOUND reel_4 chime_medium
+	REEL_ADD_CHIME_SOUND reel_4 chime_high
 	SET_ARRAY_ELEMENT reels 3 reel_4
 	ADD_SCORE_REEL backglass reel_4 15.625 21.25
 	DESIGNATE_BACKGLASS backglass
+
+	REEL_LIGHT reel_1 1
+	REEL_LIGHT reel_2 1
+	REEL_LIGHT reel_3 1
+	REEL_LIGHT reel_4 1
 
 	BACKGROUND "graphics/MagicalRobot/bg.png"
 
@@ -239,11 +261,17 @@ LOAD:
 
 	INTEGER "replay_score" 50000
 
+	REEL_INITIALIZE reel_1 high_score
+	GREATER high_score 99999 temp_int
+	IF temp_int
+		SET_SPRITE_FRAME rollover_light_1 1
+	ENDIF
+
 	'game variables
 	INTEGER "player" 0
 	INTEGER "player_count" 0
 	INTEGER "ball_in_play" 0 '0 indicates game over
-	INTEGER "credits" 0 'TODO (assets) credit reel on backglass
+	INTEGER "credits" 0
 	INTEGER "free_play" TRUE
 	ARRAY "score" 4 0
 	INTEGER "trough_hole_occupied" TRUE
@@ -285,8 +313,8 @@ LOAD:
 	TIMER "reset_timer"
 	TIMER "launch_timer"
 
-	TIMER "reel_reset_timer"
-	INTEGER "next_reel_reset" -1
+	INTEGER "all_reels_reset" -1
+	INTEGER "reels_resetting" -1
 
 	INTEGER "eject_routine" -1
 	TIMER "eject_count_timer"
@@ -327,6 +355,41 @@ LOAD:
 	INTEGER "siderails_sprite" -1
 	SPRITE siderails_spritesheet hump_decline ABOVE_BALL 0.0 0.0 siderails_sprite
 
+	INTEGER "solenoid" -1
+	LOAD_SOUND "sound/common/solenoid.wav" TRACK_PHYSICAL solenoid
+
+	INTEGER "drop_target" -1
+	LOAD_SOUND "sound/common/drop-target.wav" TRACK_PHYSICAL drop_target
+
+	INTEGER "raise_target" -1
+	LOAD_SOUND "sound/common/raise-target.wav" TRACK_PHYSICAL raise_target
+
+	INTEGER "kickout" -1
+	LOAD_SOUND "sound/common/kickout.wav" TRACK_PHYSICAL kickout
+
+	INTEGER "knocker" -1
+	LOAD_SOUND "sound/common/knocker.wav" TRACK_TABLE knocker
+
+	INTEGER "metal_collision" -1
+	LOAD_SOUND "sound/common/metal-collision.wav" TRACK_PHYSICAL metal_collision
+	METAL_SOUND metal_collision
+
+	INTEGER "wood_collision" -1
+	LOAD_SOUND "sound/common/wood-collision.wav" TRACK_PHYSICAL wood_collision
+	WOOD_SOUND wood_collision
+
+	INTEGER "plastic_collision" -1
+	LOAD_SOUND "sound/common/plastic-collision.wav" TRACK_PHYSICAL plastic_collision
+	PLASTIC_SOUND plastic_collision
+
+	INTEGER "rubber_collision" -1
+	LOAD_SOUND "sound/common/rubber-collision.wav" TRACK_PHYSICAL rubber_collision
+	RUBBER_SOUND rubber_collision
+
+	INTEGER "nudge" -1
+	LOAD_SOUND "sound/common/nudge.wav" TRACK_PHYSICAL nudge
+	NUDGE_SOUND nudge
+
 	ARC 10.13 10.57 9.66 3.14159265 6.28318531 -1
 	WIRE -1 playfield
 
@@ -364,16 +427,17 @@ LOAD:
 	TURTLE_ARC 8.25 0.733038286 -1
 	PLASTIC -1 playfield
 
+	INTEGER "gate_collision_sound" -1
+	LOAD_SOUND "sound/common/gate-collision.wav" TRACK_PHYSICAL gate_collision_sound
+
 	INTEGER "plunger_lane_gate" -1
 	LINE 14.1950017 3.52921446 14.960002 2.20419578 plunger_lane_gate
-	'TODO (assets) impact sound (add gate material?)
-	SOLID plunger_lane_gate playfield 1.50 0.05 -1
+	SOLID plunger_lane_gate playfield 1.50 0.05 gate_collision_sound
 	GATE plunger_lane_gate -1
 
 	INTEGER "left_gate" -1
 	LINE 7.34937623 2.93029899 6.82608542 1.49256928 left_gate
-	'TODO (assets) impact sound (add gate material?)
-	SOLID left_gate playfield 1.50 0.05 -1
+	SOLID left_gate playfield 1.50 0.05 gate_collision_sound
 	GATE left_gate 1
 
 	POINT 6.82608542 1.49256928 -1
@@ -397,14 +461,21 @@ LOAD:
 	METAL -1 playfield
 
 	'plunger
+	INTEGER "plunger_collision_sound" -1
+	LOAD_SOUND "sound/common/plunger-collision.wav" TRACK_PHYSICAL plunger_collision_sound
+
+	INTEGER "plunger_bounce_sound" -1
+	LOAD_SOUND "sound/common/plunger-bounce.wav" TRACK_PHYSICAL plunger_bounce_sound
+
 	INTEGER "plunger_arc" -1
 	ARC 19.015 36.035 0.365 3.14159265 6.28318531 plunger_arc
 	INTEGER "plunger" -1
 	MOBILE plunger_arc 19.015 36.035 0.0 0.0 0.0 2.65 0.0 0.0 1.4 1.0 plunger
-	PLASTIC plunger playfield
+	SET_MOBILE_SOUNDS plunger plunger_bounce_sound -1
+	SOLID plunger playfield 1.24 -0.82 plunger_collision_sound
 
 	INTEGER "plunger_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/MagicalRobot/plunger.png" 31 272 15.5 12.5 plunger_spritesheet
+	LOAD_SPRITESHEET "graphics/MagicalRobot/plunger.png" 31 296 15.5 12.5 plunger_spritesheet
 	INTEGER "plunger_sprite" -1
 	SPRITE plunger_spritesheet playfield BELOW_BALL 0.0 0.0 plunger_sprite
 	SYNC_SPRITE plunger_sprite plunger
@@ -529,10 +600,13 @@ LOAD:
 	TURTLE_ARC 0.3 -3.14159265 right_bouncer_inner_arc
 	RUBBER right_bouncer_inner_arc playfield
 
-	'TODO implement STANDARD_BALL and use
 	INTEGER "ball_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/common/ball.png" 34 34 17.0 17.0 ball_spritesheet
-	BALL playfield 9.525 38.0 -1.0 -1.0 -1.0 TRUE TRUE ball_spritesheet -1 -1 -1
+	INTEGER "roll_sound" -1
+	LOAD_SOUND "sound/common/roll.wav" TRACK_PHYSICAL roll_sound
+	INTEGER "ball_collision_sound" -1
+	LOAD_SOUND "sound/common/ball-collision.wav" TRACK_PHYSICAL ball_collision_sound
+	BALL playfield 9.525 38.0 -1.0 -1.0 -1.0 TRUE TRUE ball_spritesheet ball_collision_sound roll_sound -1
 	'STANDARD_BALL playfield 9.525 38.0 -1
 
 	INTEGER "left_outlane_rollover" -1
@@ -631,6 +705,7 @@ LOAD:
 	TURTLE_LINE 2.8 left_slingshot
 	RUBBER_BAND left_slingshot playfield
 	SET_SENSITIVITY left_slingshot 4.75
+	GATE left_slingshot 1 'TODO change from gate collision to dedicated failsafe mode
 
 	INTEGER "left_slingshot_upper_post" -1
 	TURTLE_ARC 0.3 -2.967060 left_slingshot_upper_post
@@ -658,6 +733,7 @@ LOAD:
 	TURTLE_LINE 2.8 right_slingshot
 	RUBBER_BAND right_slingshot playfield
 	SET_SENSITIVITY right_slingshot 4.75
+	GATE right_slingshot -1 'TODO change from gate collision to dedicated failsafe mode
 
 	INTEGER "right_slingshot_upper_post" -1
 	TURTLE_ARC 0.3 2.967060 right_slingshot_upper_post
@@ -969,8 +1045,9 @@ LOAD:
 	DOUBLE "captive_ball_x" 0.0
 	DOUBLE "captive_ball_y" 0.0
 	TURTLE_GET_POSITION captive_ball_x captive_ball_y
-	'TODO STANDARD_BALL
-	BALL playfield captive_ball_x captive_ball_y -1.0 -1.0 -1.0 TRUE TRUE ball_spritesheet -1 -1 -1
+	INTEGER "captive_roll_sound" -1
+	LOAD_SOUND "sound/common/roll.wav" TRACK_PHYSICAL captive_roll_sound
+	BALL playfield captive_ball_x captive_ball_y -1.0 -1.0 -1.0 TRUE TRUE ball_spritesheet -1 captive_roll_sound -1
 	'STANDARD_BALL playfield captive_ball_x captive_ball_y -1
 
 	TURTLE_TELEPORT 5.2 12.3
@@ -1022,11 +1099,16 @@ LOAD:
 	CIRCLE 10.25 9.0 1.0 left_bumper
 	METAL left_bumper playfield
 	SET_SENSITIVITY left_bumper 4.0
+	GATE left_bumper 1 'TODO change from gate collision to dedicated failsafe mode
 
 	INTEGER "right_bumper" -1
 	CIRCLE 14.0 9.0 1.0 right_bumper
 	METAL right_bumper playfield
 	SET_SENSITIVITY right_bumper 4.0
+	GATE right_bumper 1 'TODO change from gate collision to dedicated failsafe mode
+
+	INTEGER "flipper_bounce_sound" -1
+	LOAD_SOUND "sound/common/flipper-bounce.wav" TRACK_PHYSICAL flipper_bounce_sound
 
 	INTEGER "left_flipper_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/left-flipper.png" 92 63 13.0 13.0 left_flipper_spritesheet
@@ -1034,6 +1116,7 @@ LOAD:
 	SPRITE left_flipper_spritesheet playfield ABOVE_BALL 0.0 0.0 left_flipper_sprite
 	INTEGER "left_flipper" -1
 	FLIPPER playfield 5.59 32.7 0.5235988 -0.872664 3.1 0.35 0.25 left_flipper
+	SET_MOBILE_SOUNDS left_flipper -1 flipper_bounce_sound
 	SYNC_SPRITE left_flipper_sprite left_flipper
 
 	INTEGER "right_flipper_spritesheet" -1
@@ -1042,6 +1125,7 @@ LOAD:
 	SPRITE right_flipper_spritesheet playfield ABOVE_BALL 0.0 0.0 right_flipper_sprite
 	INTEGER "right_flipper" -1
 	FLIPPER playfield 12.66 32.7 2.617994 0.872664 3.1 0.35 0.25 right_flipper
+	SET_MOBILE_SOUNDS right_flipper -1 flipper_bounce_sound
 	SYNC_SPRITE right_flipper_sprite right_flipper
 
 	INTEGER "yellow_light_spritesheet" -1
@@ -1137,25 +1221,37 @@ LOAD:
 	SPRITE bonus_2X_light_spritesheet playfield BELOW_BALL 9.125 34.7 shoot_again_light
 BREAK
 INPUT_DOWN INPUT_LEFT_FLIPPER:
-	NOT ball_in_play temp_int
-	OR temp_int tilt temp_int
+	NOT left_button_down temp_int
 	IF temp_int
-		BREAK
+		SET_INTEGER left_button_down 1
+		NOT ball_in_play temp_int
+		OR temp_int tilt temp_int
+		IF temp_int
+			BREAK
+		ENDIF
+		PLAY_SOUND solenoid 48
+		SET_MOBILE_ANGULAR_ACCELERATION left_flipper -640.0
 	ENDIF
-	SET_MOBILE_ANGULAR_ACCELERATION left_flipper -640.0
 BREAK
 INPUT_UP INPUT_LEFT_FLIPPER:
+	SET_INTEGER left_button_down 0
 	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
 BREAK
 INPUT_DOWN INPUT_RIGHT_FLIPPER:
-	NOT ball_in_play temp_int
-	OR temp_int tilt temp_int
+	NOT right_button_down temp_int
 	IF temp_int
-		BREAK
+		SET_INTEGER right_button_down 1
+		NOT ball_in_play temp_int
+		OR temp_int tilt temp_int
+		IF temp_int
+			BREAK
+		ENDIF
+		PLAY_SOUND solenoid 48
+		SET_MOBILE_ANGULAR_ACCELERATION right_flipper 640.0
 	ENDIF
-	SET_MOBILE_ANGULAR_ACCELERATION right_flipper 640.0
 BREAK
 INPUT_UP INPUT_RIGHT_FLIPPER:
+	SET_INTEGER right_button_down 0
 	SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
 BREAK
 INPUT_DOWN ANALOG_PLUNGER:
@@ -1179,7 +1275,6 @@ INPUT_DOWN INPUT_PLUNGER:
 	SET_MOBILE_SPRING_CONSTANT plunger 400.0
 BREAK
 INPUT_DOWN INPUT_COIN:
-	'TODO (assets) coin return SFX?
 	GOSUB add_credit
 BREAK
 INPUT_DOWN INPUT_START:
@@ -1224,8 +1319,22 @@ INPUT_DOWN INPUT_START:
 	NOT ball_in_play temp_int
 	IF temp_int
 		SET_ARRAY_ELEMENT score 0 0
+		SET_ARRAY_ELEMENT score 1 0
+		SET_ARRAY_ELEMENT score 2 0
+		SET_ARRAY_ELEMENT score 3 0
 		SET_SPRITE_FRAME rollover_light_1 0
+		SET_SPRITE_FRAME rollover_light_2 0
+		SET_SPRITE_FRAME rollover_light_3 0
+		SET_SPRITE_FRAME rollover_light_4 0
+		SET_INTEGER reels_resetting 4
+		REEL_LIGHT reel_1 0
+		REEL_LIGHT reel_2 0
+		REEL_LIGHT reel_3 0
+		REEL_LIGHT reel_4 0
 		REEL_RESET reel_1
+		REEL_RESET reel_2
+		REEL_RESET reel_3
+		REEL_RESET reel_4
 	ENDIF
 BREAK
 INPUT_DOWN INPUT_NUDGE:
@@ -1246,15 +1355,18 @@ LABEL score_routine
 	ADD match_position temp_int match_position
 	MODULO match_position 10 match_position
 	GET_ARRAY_ELEMENT score player temp_int
-	LESS temp_int replay_score temp_int_2
-	IF temp_int_2
-		ADD temp_int score_pending temp_int_2
-		LESS temp_int_2 replay_score temp_int_2
-		NOT temp_int_2 temp_int_2
-		IF temp_int_2
-			'TODO (assets) knocker
-			GOSUB add_credit
-		ENDIF
+	SET_INTEGER temp_int_2 replay_score
+	LESS temp_int_2 temp_int temp_int_3
+	WHILE temp_int_3
+		ADD temp_int_2 100000 temp_int_2
+		LESS temp_int_2 temp_int temp_int_3
+	WEND
+	ADD temp_int score_pending temp_int_3
+	LESS temp_int_3 temp_int_2 temp_int_3
+	NOT temp_int_3 temp_int_3
+	IF temp_int_3
+		PLAY_SOUND knocker 64
+		GOSUB add_credit
 	ENDIF
 	GET_ARRAY_ELEMENT score player temp_int
 	ADD temp_int score_pending temp_int
@@ -1296,7 +1408,6 @@ LABEL update_bonus_multiplier
 		SET_SPRITE_FRAME bonus_2X_light 0
 	ENDIF
 RETURN
-'TODO research bumpers/slingshots and determine if cooldown timers should be implemented
 COLLISION left_bumper:
 	IF tilt
 		BREAK
@@ -1307,6 +1418,7 @@ COLLISION left_bumper:
 		SET_INTEGER score_pending 10
 	ENDIF
 	GOSUB score_routine
+	PLAY_SOUND solenoid 48
 	BUMPER_ACTION playfield left_bumper 0.15 16.0
 BREAK
 COLLISION right_bumper:
@@ -1319,6 +1431,7 @@ COLLISION right_bumper:
 		SET_INTEGER score_pending 10
 	ENDIF
 	GOSUB score_routine
+	PLAY_SOUND solenoid 48
 	BUMPER_ACTION playfield right_bumper 0.15 16.0
 BREAK
 COLLISION left_slingshot:
@@ -1327,6 +1440,7 @@ COLLISION left_slingshot:
 	ENDIF
 	SET_INTEGER score_pending 10
 	GOSUB score_routine
+	PLAY_SOUND solenoid 48
 	SLINGSHOT_ACTION playfield left_slingshot 0.5 28.0 0.5
 	LOOP_SPRITE_ANIMATION left_slingshot_sprite 0 0 3 30.0 1
 BREAK
@@ -1336,6 +1450,7 @@ COLLISION right_slingshot:
 	ENDIF
 	SET_INTEGER score_pending 10
 	GOSUB score_routine
+	PLAY_SOUND solenoid 48
 	SLINGSHOT_ACTION playfield right_slingshot -0.5 28.0 0.5
 	LOOP_SPRITE_ANIMATION right_slingshot_sprite 0 0 3 30.0 1
 BREAK
@@ -1350,6 +1465,7 @@ COLLISION left_target_1:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE left_target_1 FALSE
 	SET_SPRITE_FRAME left_target_1_sprite 0
 	ADD left_drop_targets_down 1 left_drop_targets_down
@@ -1359,6 +1475,7 @@ COLLISION left_target_2:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE left_target_2 FALSE
 	SET_SPRITE_FRAME left_target_2_sprite 0
 	ADD left_drop_targets_down 1 left_drop_targets_down
@@ -1368,6 +1485,7 @@ COLLISION left_target_3:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE left_target_3 FALSE
 	SET_SPRITE_FRAME left_target_3_sprite 0
 	ADD left_drop_targets_down 1 left_drop_targets_down
@@ -1377,6 +1495,7 @@ COLLISION left_target_4:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE left_target_4 FALSE
 	SET_SPRITE_FRAME left_target_4_sprite 0
 	ADD left_drop_targets_down 1 left_drop_targets_down
@@ -1386,6 +1505,7 @@ COLLISION left_target_5:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE left_target_5 FALSE
 	SET_SPRITE_FRAME left_target_5_sprite 0
 	ADD left_drop_targets_down 1 left_drop_targets_down
@@ -1412,6 +1532,7 @@ COLLISION right_target_1:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE right_target_1 FALSE
 	SET_SPRITE_FRAME right_target_1_sprite 0
 	ADD right_drop_targets_down 1 right_drop_targets_down
@@ -1421,6 +1542,7 @@ COLLISION right_target_2:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE right_target_2 FALSE
 	SET_SPRITE_FRAME right_target_2_sprite 0
 	ADD right_drop_targets_down 1 right_drop_targets_down
@@ -1430,6 +1552,7 @@ COLLISION right_target_3:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE right_target_3 FALSE
 	SET_SPRITE_FRAME right_target_3_sprite 0
 	ADD right_drop_targets_down 1 right_drop_targets_down
@@ -1439,6 +1562,7 @@ COLLISION right_target_4:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE right_target_4 FALSE
 	SET_SPRITE_FRAME right_target_4_sprite 0
 	ADD right_drop_targets_down 1 right_drop_targets_down
@@ -1448,6 +1572,7 @@ COLLISION right_target_5:
 	SET_INTEGER score_pending 100
 	GOSUB score_routine
 	GOSUB add_bonus
+	PLAY_SOUND drop_target 32
 	TANGIBLE right_target_5 FALSE
 	SET_SPRITE_FRAME right_target_5_sprite 0
 	ADD right_drop_targets_down 1 right_drop_targets_down
@@ -1471,7 +1596,6 @@ LABEL check_right_bank
 	ENDIF
 RETURN
 COLLISION trough_hole:
-	'TODO (on drain) quickly cycle through inactive players instead of skipping?
 	NOT trough_hole_occupied temp_int
 	IF temp_int
 		SET_INTEGER trough_hole_occupied TRUE
@@ -1481,7 +1605,22 @@ COLLISION trough_hole:
 				START_TIMER bonus_count_timer 0.25
 			ELSE
 				SET_ARRAY_ELEMENT score 0 0
+				SET_ARRAY_ELEMENT score 1 0
+				SET_ARRAY_ELEMENT score 2 0
+				SET_ARRAY_ELEMENT score 3 0
+				SET_SPRITE_FRAME rollover_light_1 0
+				SET_SPRITE_FRAME rollover_light_2 0
+				SET_SPRITE_FRAME rollover_light_3 0
+				SET_SPRITE_FRAME rollover_light_4 0
+				SET_INTEGER reels_resetting 4
+				REEL_LIGHT reel_1 0
+				REEL_LIGHT reel_2 0
+				REEL_LIGHT reel_3 0
+				REEL_LIGHT reel_4 0
 				REEL_RESET reel_1
+				REEL_RESET reel_2
+				REEL_RESET reel_3
+				REEL_RESET reel_4
 			ENDIF
 		ELSE
 			START_TIMER launch_timer 0.5
@@ -1529,8 +1668,8 @@ TIMER_DONE bonus_count_timer:
 			GOSUB update_ball_in_play
 			GET_ARRAY_ELEMENT match_sequence match_position match_digit
 			GOSUB update_match_lights
-			'TODO delay between multiple matches (for knocker and credit reel)
 			SET_INTEGER temp_int 0
+			SET_INTEGER temp_int_4 0
 			LESS temp_int player_count temp_int_2
 			WHILE temp_int_2
 				GET_ARRAY_ELEMENT score temp_int temp_int_3
@@ -1538,21 +1677,40 @@ TIMER_DONE bonus_count_timer:
 				MODULO temp_int_3 10 temp_int_3
 				EQUAL temp_int_3 match_digit temp_int_3
 				IF temp_int_3
-					'TODO (assets) knocker
 					GOSUB add_credit
 				ENDIF
+				ADD temp_int_4 temp_int_3 temp_int_4
 				ADD temp_int 1 temp_int
 				LESS temp_int player_count temp_int_2
 			WEND
+			IF temp_int_4
+				'TODO play once per match
+				PLAY_SOUND knocker 64
+			ENDIF
 			SET_INTEGER player_count 0
+			REEL_LIGHT reel_1 1
+			REEL_LIGHT reel_2 1
+			REEL_LIGHT reel_3 1
+			REEL_LIGHT reel_4 1
 			GOSUB update_queued_players
-			'TODO (QA) ensure this value is equal to the acceleration from releasing the flipper normally
 			SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
 			SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
 		ENDIF
 	ENDIF
 BREAK
 TIMER_DONE reset_timer:
+	EQUAL ball_in_play 1 temp_int
+	OR temp_int tilt temp_int
+	IF temp_int
+		IF left_button_down
+			PLAY_SOUND solenoid 48
+			SET_MOBILE_ANGULAR_ACCELERATION left_flipper -640.0
+		ENDIF
+		IF right_button_down
+			PLAY_SOUND solenoid 48
+			SET_MOBILE_ANGULAR_ACCELERATION right_flipper 640.0
+		ENDIF
+	ENDIF
 	SET_INTEGER extra_ball FALSE
 	SET_SPRITE_FRAME shoot_again_light 0
 	SET_SPRITE_FRAME backglass_shoot_again_light 0
@@ -1576,6 +1734,12 @@ TIMER_DONE reset_timer:
 	SET_SPRITE_FRAME tilt_light 0
 BREAK
 LABEL reset_drop_targets
+	IF left_drop_targets_down
+		PLAY_SOUND raise_target 128
+	ENDIF
+	IF right_drop_targets_down
+		PLAY_SOUND raise_target 128
+	ENDIF
 	SET_INTEGER left_bank_clear FALSE
 	SET_INTEGER right_bank_clear FALSE
 	SET_INTEGER eject_hole_lit FALSE
@@ -1612,6 +1776,7 @@ LABEL trough_kickout_routine
 	SET_INTEGER trough_hole_occupied FALSE
 	TANGIBLE trough_hole FALSE
 	MAGNET_POWER trough_hole_magnet 0.0
+	PLAY_SOUND kickout 24
 	KICKOUT_ACTION playfield 9.525 38.0 playfield 27.8388220359 -15.0375907688
 	START_TIMER trough_kickout_timer 0.25
 RETURN
@@ -1646,6 +1811,7 @@ BREAK
 LABEL eject_routine
 	TANGIBLE eject_hole FALSE
 	MAGNET_POWER eject_hole_magnet 0.0
+	PLAY_SOUND kickout 24
 	KICKOUT_ACTION playfield 14.47003 5.655059 playfield 8.55050358 23.4923155
 	SET_INTEGER eject_hole_occupied FALSE
 	START_TIMER eject_timer 0.25
@@ -1756,55 +1922,41 @@ LABEL tilt_routine
 	SET_INTEGER right_bank_clear FALSE
 	SET_SPRITE_FRAME eject_hole_light 0
 	SET_INTEGER eject_hole_lit FALSE
-	'TODO research if extra ball should be lost on tilt
-	SET_SPRITE_FRAME shoot_again_light 0
-	SET_SPRITE_FRAME backglass_shoot_again_light 0
-	SET_INTEGER extra_ball FALSE
-	'TODO (QA) ensure this value is equal to the acceleration from releasing the flipper normally
 	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
 	SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
 RETURN
 TILT_BOB_CONTACT 0:
-	'TODO research tilting during game over
 	GOSUB tilt_routine
 BREAK
-'TODO delay between reel resets
-TIMER_DONE reel_reset_timer:
-	EQUAL next_reel_reset 2 temp_int
-	IF temp_int
-		REEL_RESET reel_2
-		BREAK
-	ENDIF
-	EQUAL next_reel_reset 3 temp_int
-	IF temp_int
-		REEL_RESET reel_3
-		BREAK
-	ENDIF
-	REEL_RESET reel_4
-BREAK
 REEL_RESET_DONE reel_1:
-	SET_ARRAY_ELEMENT score 1 0
-	SET_SPRITE_FRAME rollover_light_2 0
-	SET_INTEGER next_reel_reset 2
-	START_TIMER reel_reset_timer 0.25 'TODO research reel reset delay duration
-	'REEL_RESET reel_2
+	SUBTRACT reels_resetting 1 reels_resetting
+	NOT reels_resetting temp_int
+	IF temp_int
+		GOSUB all_reels_reset
+	ENDIF
 BREAK
 REEL_RESET_DONE reel_2:
-	SET_ARRAY_ELEMENT score 2 0
-	SET_SPRITE_FRAME rollover_light_3 0
-	SET_INTEGER next_reel_reset 3
-	START_TIMER reel_reset_timer 0.25 'TODO research reel reset delay duration
-	'REEL_RESET reel_3
+	SUBTRACT reels_resetting 1 reels_resetting
+	NOT reels_resetting temp_int
+	IF temp_int
+		GOSUB all_reels_reset
+	ENDIF
 BREAK
 REEL_RESET_DONE reel_3:
-	SET_ARRAY_ELEMENT score 3 0
-	SET_SPRITE_FRAME rollover_light_4 0
-	SET_INTEGER next_reel_reset 4
-	START_TIMER reel_reset_timer 0.25 'TODO research reel reset delay duration
-	'REEL_RESET reel_4
+	SUBTRACT reels_resetting 1 reels_resetting
+	NOT reels_resetting temp_int
+	IF temp_int
+		GOSUB all_reels_reset
+	ENDIF
 BREAK
 REEL_RESET_DONE reel_4:
-	'TODO delay before proceeding? (research)
+	SUBTRACT reels_resetting 1 reels_resetting
+	NOT reels_resetting temp_int
+	IF temp_int
+		GOSUB all_reels_reset
+	ENDIF
+BREAK
+LABEL all_reels_reset
 	IF suppress_playfield_reset
 		SET_INTEGER suppress_playfield_reset FALSE
 		SET_INTEGER player 0
@@ -1814,7 +1966,7 @@ REEL_RESET_DONE reel_4:
 	ELSE
 		START_TIMER bonus_count_timer 0.25
 	ENDIF
-BREAK
+RETURN
 LABEL save_score
 	GET_ARRAY_ELEMENT score 0 temp_int
 	SAVE_RECORD record "records/Magical-Robot-records.txt" "" temp_int
@@ -1860,7 +2012,6 @@ LABEL update_ball_in_play
 		REEL_LIGHT reel_3 FALSE
 		SET_SPRITE_FRAME player_4_light 0
 		REEL_LIGHT reel_4 FALSE
-		'TODO research when lights should be set (may be necessary during reel reset)
 	ENDIF
 RETURN
 LABEL update_match_lights
@@ -1912,6 +2063,7 @@ LABEL charge_credit
 	ENDIF
 RETURN
 LABEL update_credit_reel
+	PLAY_SOUND credit_reel_turn 128
 	SET_SPRITE_FRAME credit_reel credits
 RETURN
 REEL_ROLLOVER reel_1:
