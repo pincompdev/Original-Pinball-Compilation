@@ -2,6 +2,28 @@ Original Pinball Compilation
 
 This project is planned to contain multiple pinball tables. As of this writing, only one is available. It is incomplete, but playable.
 
+Build (macOS)
+
+Prereqs:
+- Xcode Command Line Tools (`xcode-select --install`)
+- Homebrew deps: `brew install sdl2 sdl2_image sdl2_mixer pkg-config`
+
+Option A (script):
+- `bash tools/build-macos.sh`
+- Run: `bash tools/run.sh`
+
+Option B (CMake):
+- `cmake -S . -B build && cmake --build build`
+- Run: `./build/pinball`
+
+Option C (Make):
+- `make`
+- Run: `make run`
+
+Notes:
+- The game loads assets via relative paths; the executable will try to auto-select the right working directory at startup.
+- You can override the data directory with `OPC_DATA_DIR=/path/to/repo/root ./build/pinball`.
+
 Keyboard controls are as follows:
 
 Start - C
