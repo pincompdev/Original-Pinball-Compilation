@@ -1,0 +1,21 @@
+# Build outputs
+/build/
+/bin/
+/obj/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# macOS
+*.dSYM/
+.DS_Store
+
+# IDEs
+.vscode/
+*.cbp
+*.depend
+*.layout
+
