@@ -11,10 +11,63 @@
 #include <unordered_set>
 #include <algorithm>
 #include <math.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <time.h>
 #include <sstream>
 #include <cstdarg>
+#if defined(_WIN32)
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
+
+static bool file_exists(const std::string& path)
+{
+    std::ifstream f(path);
+    return f.good();
+}
+
+static void try_set_working_directory()
+{
+    const char* env_data_dir = std::getenv("OPC_DATA_DIR");
+    if (env_data_dir && env_data_dir[0])
+    {
+#if defined(_WIN32)
+        _chdir(env_data_dir);
+#else
+        chdir(env_data_dir);
+#endif
+        return;
+    }
+
+    char* base_path = SDL_GetBasePath();
+    if (!base_path)
+    {
+        return;
+    }
+
+    std::string exe_dir(base_path);
+    SDL_free(base_path);
+
+    const std::vector<std::string> candidates = {
+        exe_dir,
+        exe_dir + "../",
+        exe_dir + "../Resources/",
+    };
+
+    for (const auto& dir : candidates)
+    {
+        if (file_exists(dir + "scripts/Magical-Robot.txt"))
+        {
+#if defined(_WIN32)
+            _chdir(dir.c_str());
+#else
+            chdir(dir.c_str());
+#endif
+            return;
+        }
+    }
+}
 
 int DISPLAY_WIDTH = 640;
 int DISPLAY_HEIGHT = 480;
@@ -655,7 +708,7 @@ public:
     Point b = Point(0.0, 0.0);
     Spinner* spinner = nullptr;
     bool band_bounce = false; //When true, collider is bouncier in the middle than at the ends
-    bool outer_bounce_coefficient = 1.0;
+    double outer_bounce_coefficient = 1.0;
     LineCollider(double x1, double y1, double x2, double y2)
     {
         a.x = x1;
@@ -2882,7 +2935,7 @@ public:
         command_table["SET_SPRITE_VISIBILITY"] = SET_SPRITE_VISIBILITY;
         define_syntax(SET_SPRITE_VISIBILITY, 2, TYPE_INTEGER, TYPE_INTEGER); //ID in, visibility
         command_table["TRANSLATE_SPRITE"] = TRANSLATE_SPRITE;
-        define_syntax(TRANSLATE_SPRITE, 4, TYPE_INTEGER, TYPE_DOUBLE, TYPE_DOUBLE); //ID in, x, y
+        define_syntax(TRANSLATE_SPRITE, 3, TYPE_INTEGER, TYPE_DOUBLE, TYPE_DOUBLE); //ID in, x, y
         command_table["ROTATE_SPRITE"] = ROTATE_SPRITE;
         define_syntax(ROTATE_SPRITE, 2, TYPE_INTEGER, TYPE_DOUBLE); //ID in, angle
         command_table["SET_BALL_SPRITE_ROTATION"] = SET_BALL_SPRITE_ROTATION;
@@ -2896,7 +2949,7 @@ public:
         command_table["LOOP_SPRITE_ANIMATION"] = LOOP_SPRITE_ANIMATION;
         define_syntax(LOOP_SPRITE_ANIMATION, 6, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_DOUBLE, TYPE_INTEGER); //ID in, animation, start frame, frame count, frames per second, loop count
         command_table["LOOP_SYNCHRONOUS_SPRITE_ANIMATION"] = LOOP_SYNCHRONOUS_SPRITE_ANIMATION;
-        define_syntax(LOOP_SYNCHRONOUS_SPRITE_ANIMATION, 6, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_DOUBLE, TYPE_DOUBLE); //ID in, animation, start frame, frame count, frames per second, sync offset
+        define_syntax(LOOP_SYNCHRONOUS_SPRITE_ANIMATION, 6, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_DOUBLE, TYPE_DOUBLE); //ID in, animation, start frame, frame count, frames per second, sync offset
         command_table["NUDGE"] = NUDGE;
         define_syntax(NUDGE, 3, TYPE_DOUBLE, TYPE_DOUBLE, TYPE_DOUBLE); //velocity x, velocity y, duration
         command_table["HALT_NUDGE"] = HALT_NUDGE;
@@ -3421,6 +3474,12 @@ public:
         gamepad_button_binds.clear();
         gamepad_axis_binds.clear();
         std::ifstream file(filename);
+        if (!file.good())
+        {
+            std::cout << "WARNING: can't read controls file: " << filename << " (using defaults)" << std::endl;
+            default_controls();
+            return;
+        }
         std::string line;
         int mode = 0; //0 = key, 1 = button, 2 = axis
         int code = 0;
@@ -3707,7 +3766,7 @@ public:
         {
             return 0;
         }
-        for (unsigned int i = 0; i < scores.size(); i--)
+        for (unsigned int i = 0; i < scores.size(); ++i)
         {
             if (score > scores[i].second)
             {
@@ -4147,12 +4206,16 @@ public:
                 }
             }
         }
-        for (auto i = switches_down.begin(); i != switches_down.end(); ++i)
+        for (auto i = switches_down.begin(); i != switches_down.end();)
         {
-            if (switches_down_this_tick.find(*i) == switches_down_this_tick.end())
+            int switch_id = *i;
+            if (switches_down_this_tick.find(switch_id) == switches_down_this_tick.end())
             {
-                switches_down.erase(*i);
-                trigger_queue.push_back(std::pair<Event, int>(SWITCH_UP, (*i)));
+                i = switches_down.erase(i);
+                trigger_queue.push_back(std::pair<Event, int>(SWITCH_UP, switch_id));
+            } else
+            {
+                ++i;
             }
         }
         for (unsigned int i = 0; i < balls.size(); ++i)
@@ -4603,7 +4666,7 @@ void trim_line(std::string& line)
             line.resize(i);
         }
     }
-    while (line.size() && (line.back() == '\n' || line.back() == ' ' || line.back() == '\t'))
+    while (line.size() && (line.back() == '\n' || line.back() == '\r' || line.back() == ' ' || line.back() == '\t'))
     {
         line.pop_back();
     }
@@ -7905,7 +7968,7 @@ public:
                     variable_index_table[name] = std::pair<DataType, int>(TYPE_ARRAY, arrays.size() - 1);
                 } else
                 {
-                    delete arrays[variable_index_table[name].second].second;
+                    delete[] arrays[variable_index_table[name].second].second;
                     int* start = new int[n];
                     for (int i = 0; i < n; ++i)
                     {
@@ -9342,6 +9405,7 @@ int main(int argc, char* argv[])
     //TODO investigate cases where ball triggers one-way hole collider without becoming trapped in hole (note: this has been observed in real pinball)
     //TODO test game not responding after being left open while computer is asleep
     //TODO solution for ball-to-ball collisions across layer portals
+    try_set_working_directory();
     uint64_t initial_count = SDL_GetPerformanceCounter();
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK);
