@@ -84,7 +84,7 @@ LOAD:
 	REEL_LIGHT reel_3 1
 	REEL_LIGHT reel_4 1
 
-	BACKGROUND "graphics/MagicalRobot/bg.png"
+	BACKGROUND "MagicalRobot/bg.png"
 
 	INTEGER "backglass_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/backglass.png" 928 928 464.0 464.0 backglass_spritesheet
@@ -117,22 +117,22 @@ LOAD:
 	SPRITE ball_5_light_spritesheet playfield BELOW_BALL 19.5 -12.95 ball_5_light
 
 	INTEGER "queued_1_light_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/MagicalRobot/1-player-light.png" 32 32 16.0 16.0 queued_1_light_spritesheet
+	LOAD_SPRITESHEET "MagicalRobot/1-player-light.png" 32 32 16.0 16.0 queued_1_light_spritesheet
 	INTEGER "queued_1_light" -1
 	SPRITE queued_1_light_spritesheet playfield BELOW_BALL -1.25 -26.0 queued_1_light
 
 	INTEGER "queued_2_light_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/MagicalRobot/2-player-light.png" 32 32 16.0 16.0 queued_2_light_spritesheet
+	LOAD_SPRITESHEET "MagicalRobot/2-player-light.png" 32 32 16.0 16.0 queued_2_light_spritesheet
 	INTEGER "queued_2_light" -1
 	SPRITE queued_2_light_spritesheet playfield BELOW_BALL 0.25 -26.0 queued_2_light
 
 	INTEGER "queued_3_light_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/MagicalRobot/3-player-light.png" 32 32 16.0 16.0 queued_3_light_spritesheet
+	LOAD_SPRITESHEET "MagicalRobot/3-player-light.png" 32 32 16.0 16.0 queued_3_light_spritesheet
 	INTEGER "queued_3_light" -1
 	SPRITE queued_3_light_spritesheet playfield BELOW_BALL 1.75 -26.0 queued_3_light
 
 	INTEGER "queued_4_light_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/MagicalRobot/4-player-light.png" 32 32 16.0 16.0 queued_4_light_spritesheet
+	LOAD_SPRITESHEET "MagicalRobot/4-player-light.png" 32 32 16.0 16.0 queued_4_light_spritesheet
 	INTEGER "queued_4_light" -1
 	SPRITE queued_4_light_spritesheet playfield BELOW_BALL 3.25 -26.0 queued_4_light
 
@@ -351,7 +351,7 @@ LOAD:
 	SPRITE above_ball_spritesheet hump_decline ABOVE_BALL 0.0 0.0 above_ball_sprite
 
 	INTEGER "siderails_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/MagicalRobot/siderails.png" 711 1428 32.0 32.0 siderails_spritesheet
+	LOAD_SPRITESHEET "graphics/siderails.png" 711 1428 32.0 32.0 siderails_spritesheet
 	INTEGER "siderails_sprite" -1
 	SPRITE siderails_spritesheet hump_decline ABOVE_BALL 0.0 0.0 siderails_sprite
 
