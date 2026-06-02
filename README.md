@@ -54,3 +54,18 @@ Table rules (Magical Robot):
 - Complete both drop target banks to light eject hole for extra ball
 - Drop targets and eject hole advance bonus by 1000 (max 15000)
 - Tilt forfeits ball in play
+
+Table rules (Saturn Strikes):
+- Spinner lights 5-bank target for Strike or Spare
+- Hit lit 5-bank target to advance bowling multiplier and bonus multiplier and score 200k for Strike or 100k for Spare (subject to bowling multiplier)
+- Completing 5-bank without hitting lit target only advances bonus multiplier
+- Complete 1-2-3 to advance bonus multiplier (lane change on right flipper)
+- Left secondary button activates outlane saver magnet when lit
+- Standup target lights spinner for 10x score and double bonus on next rip
+- Skillshot on standup target scores 10k
+- Hit strobing 3-bank target to advance eject hole reward (10k, 30k, 50k, collect bonus) and score 10k
+- Complete 3-bank to relight Hook Shot
+- Strike with 3x bowling multiplier lights extra ball on outlanes, then special on standup target
+- Rollovers, targets, and spinner advance bonus
+- Super bonus held at 20k, 30k, and 40k
+- Tilt forfeits ball in play
