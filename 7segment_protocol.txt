@@ -1,0 +1,126 @@
+a b c d e f g
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+a b c d e f
+b c
+a b d e g
+a b c d g
+b c f g
+a c d f g
+a c d e f g
+a b c
+a b c d e f g
+a b c d f g
+
+
+
+d g
+
+
+
+a b c e f g
+c d e f g
+a d e f
+b c d e g
+a d e f g
+a e f g
+a b c d f g
+b c e f g
+b c
+b c d e
+b c e f g
+d e f
+
+c e g
+a b c d e f
+a b e f g
+a b c f g
+e g
+a c d f g
+a e f
+b c d e f
+b c d e f
+
+
+b c d f g
+a b d e g
+a d e f
+
+a b c d
+
+d
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+e f

@@ -1,4 +1,6 @@
 LOAD:
+	'TODO test for reset bug from Saturn Strikes (resetting while validated caused subsequent resets to assume playfield validation because of awaiting_reset variable never being cleared
+	'TODO add margins to HUD elements
 	INTEGER "temp_int" -1
 	INTEGER "temp_int_2" -1
 	INTEGER "temp_int_3" -1
@@ -84,7 +86,7 @@ LOAD:
 	REEL_LIGHT reel_3 1
 	REEL_LIGHT reel_4 1
 
-	BACKGROUND "MagicalRobot/bg.png"
+	BACKGROUND "graphics/MagicalRobot/bg.png"
 
 	INTEGER "backglass_spritesheet" -1
 	LOAD_SPRITESHEET "graphics/MagicalRobot/backglass.png" 928 928 464.0 464.0 backglass_spritesheet
@@ -117,22 +119,22 @@ LOAD:
 	SPRITE ball_5_light_spritesheet playfield BELOW_BALL 19.5 -12.95 ball_5_light
 
 	INTEGER "queued_1_light_spritesheet" -1
-	LOAD_SPRITESHEET "MagicalRobot/1-player-light.png" 32 32 16.0 16.0 queued_1_light_spritesheet
+	LOAD_SPRITESHEET "graphics/MagicalRobot/1-player-light.png" 32 32 16.0 16.0 queued_1_light_spritesheet
 	INTEGER "queued_1_light" -1
 	SPRITE queued_1_light_spritesheet playfield BELOW_BALL -1.25 -26.0 queued_1_light
 
 	INTEGER "queued_2_light_spritesheet" -1
-	LOAD_SPRITESHEET "MagicalRobot/2-player-light.png" 32 32 16.0 16.0 queued_2_light_spritesheet
+	LOAD_SPRITESHEET "graphics/MagicalRobot/2-player-light.png" 32 32 16.0 16.0 queued_2_light_spritesheet
 	INTEGER "queued_2_light" -1
 	SPRITE queued_2_light_spritesheet playfield BELOW_BALL 0.25 -26.0 queued_2_light
 
 	INTEGER "queued_3_light_spritesheet" -1
-	LOAD_SPRITESHEET "MagicalRobot/3-player-light.png" 32 32 16.0 16.0 queued_3_light_spritesheet
+	LOAD_SPRITESHEET "graphics/MagicalRobot/3-player-light.png" 32 32 16.0 16.0 queued_3_light_spritesheet
 	INTEGER "queued_3_light" -1
 	SPRITE queued_3_light_spritesheet playfield BELOW_BALL 1.75 -26.0 queued_3_light
 
 	INTEGER "queued_4_light_spritesheet" -1
-	LOAD_SPRITESHEET "MagicalRobot/4-player-light.png" 32 32 16.0 16.0 queued_4_light_spritesheet
+	LOAD_SPRITESHEET "graphics/MagicalRobot/4-player-light.png" 32 32 16.0 16.0 queued_4_light_spritesheet
 	INTEGER "queued_4_light" -1
 	SPRITE queued_4_light_spritesheet playfield BELOW_BALL 3.25 -26.0 queued_4_light
 
@@ -351,7 +353,7 @@ LOAD:
 	SPRITE above_ball_spritesheet hump_decline ABOVE_BALL 0.0 0.0 above_ball_sprite
 
 	INTEGER "siderails_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/siderails.png" 711 1428 32.0 32.0 siderails_spritesheet
+	LOAD_SPRITESHEET "graphics/MagicalRobot/siderails.png" 711 1428 32.0 32.0 siderails_spritesheet
 	INTEGER "siderails_sprite" -1
 	SPRITE siderails_spritesheet hump_decline ABOVE_BALL 0.0 0.0 siderails_sprite
 
@@ -1163,7 +1165,7 @@ LOAD:
 	SPRITE yellow_light_spritesheet playfield BELOW_BALL 7.357291 12.786538 captive_ball_light
 
 	INTEGER "red_light_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/MagicalRobot/red-light.png" 24 24 12.0 12.0 red_light_spritesheet
+	LOAD_SPRITESHEET "graphics/common/red-light.png" 24 24 12.0 12.0 red_light_spritesheet
 
 	INTEGER "eject_hole_light" -1
 	SPRITE red_light_spritesheet playfield BELOW_BALL 15.5 6.8 eject_hole_light
@@ -1188,7 +1190,7 @@ LOAD:
 	SPRITE right_slingshot_spritesheet playfield BELOW_BALL 12.85 29.6 right_slingshot_sprite
 
 	INTEGER "white_light_spritesheet" -1
-	LOAD_SPRITESHEET "graphics/MagicalRobot/white-light.png" 24 24 12.0 12.0 white_light_spritesheet
+	LOAD_SPRITESHEET "graphics/common/white-light.png" 24 24 12.0 12.0 white_light_spritesheet
 
 	INTEGER "bonus_1k_light" -1
 	SPRITE white_light_spritesheet playfield BELOW_BALL 7.125 29.7 bonus_1k_light
@@ -1451,7 +1453,7 @@ COLLISION right_slingshot:
 	SET_INTEGER score_pending 10
 	GOSUB score_routine
 	PLAY_SOUND solenoid 48
-	SLINGSHOT_ACTION playfield right_slingshot -0.5 28.0 0.5
+	SLINGSHOT_ACTION playfield right_slingshot 0.5 28.0 0.5
 	LOOP_SPRITE_ANIMATION right_slingshot_sprite 0 0 3 30.0 1
 BREAK
 COLLISION left_overhang_upper_face:

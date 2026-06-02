@@ -11,10 +11,11 @@
 #include <unordered_set>
 #include <algorithm>
 #include <math.h>
-#include <cstdlib>
+#include <stdlib.h>
 #include <time.h>
 #include <sstream>
 #include <cstdarg>
+
 #if defined(_WIN32)
 #include <direct.h>
 #else
@@ -820,6 +821,7 @@ public:
     double radius;
     double start_angle = 0.0;
     double end_angle = 2 * PI;
+    bool strict_hole_collision = true;
     ArcCollider(double x, double y, double radius) : radius(radius)
     {
         center.x = x;
@@ -846,6 +848,12 @@ public:
     }
     bool is_touching(Ball* ball, bool clip, Point* unit_normal)
     {
+        //TODO add strict mode for hole gate switches to only trigger if ball is entirely inside hole (within epsilon) if gate is -1 and strict_collision is true
+        //case: ball is inside hole (gate == -1) and touching radius; function returns true
+        //desired behavior: while strict_hole_collision is true, only return true if ball is completely within hole and moving out
+        //do not return true if ball is only partially in hole (epsilon tolerance)
+        //do not return true if ball is moving inwards
+        bool passed_strict_hole_collision = false;
         Point center_to_ball = Point(ball->position.x - center.x, ball->position.y - center.y);
         if (end_angle - start_angle < 2 * PI)
         {
@@ -861,6 +869,7 @@ public:
             bool gate_pass = false;
             if (gate == -1)
             {
+                //ball partially in hole, center outside
                 gate_pass = true;
                 Point center_to_ball_unit = Point(center_to_ball.x / center_to_ball_magnitude, center_to_ball.y / center_to_ball_magnitude);
                 Point previous_ball_position = Point(ball->position.x - ball->velocity.x * SIM_TIME_PER_PHYSICS_TICK, ball->position.y - ball->velocity.y * SIM_TIME_PER_PHYSICS_TICK);
@@ -870,6 +879,7 @@ public:
                 double epsilon = ball->radius / 4.0;
                 if (allowed_speed <= 0.0 && distance_outside_arc <= -ball->radius + epsilon)
                 {
+                    //ball moving outward while contained in hole (contradicting previous condition)
                     gate_pass = false;
                 }
                 if (gate_pass)
@@ -907,6 +917,7 @@ public:
         }
         if (center_to_ball_magnitude < radius && center_to_ball_magnitude + ball->radius > radius)
         {
+            //ball partially in hole, center inside
             bool gate_pass = false;
             if (gate == -1)
             {
@@ -919,7 +930,9 @@ public:
                 double epsilon = ball->radius / 4.0;
                 if (allowed_speed <= 0.0 && distance_outside_arc <= -ball->radius + epsilon)
                 {
+                    //ball moving outward while contained in hole
                     gate_pass = false;
+                    passed_strict_hole_collision = true;
                 }
             } else if (gate == 1)
             {
@@ -954,7 +967,8 @@ public:
                     unit_normal->y = ball_to_center_unit.y;
                 }
             }
-            return true;
+            return passed_strict_hole_collision || !solid || !(strict_hole_collision && gate == -1);
+            //return true;
         }
         return false;
     }
@@ -2597,6 +2611,8 @@ enum Command
     SET_SPRITE_FRAME,
     LOOP_SPRITE_ANIMATION,
     LOOP_SYNCHRONOUS_SPRITE_ANIMATION,
+    PAUSE_SPRITE_ANIMATION,
+    STOP_SPRITE_ANIMATION,
     RESET_TILT_BOB,
     SET_DETECTION_NORMAL,
     //Action
@@ -2950,6 +2966,10 @@ public:
         define_syntax(LOOP_SPRITE_ANIMATION, 6, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_DOUBLE, TYPE_INTEGER); //ID in, animation, start frame, frame count, frames per second, loop count
         command_table["LOOP_SYNCHRONOUS_SPRITE_ANIMATION"] = LOOP_SYNCHRONOUS_SPRITE_ANIMATION;
         define_syntax(LOOP_SYNCHRONOUS_SPRITE_ANIMATION, 6, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_INTEGER, TYPE_DOUBLE, TYPE_DOUBLE); //ID in, animation, start frame, frame count, frames per second, sync offset
+        command_table["PAUSE_SPRITE_ANIMATION"] = PAUSE_SPRITE_ANIMATION;
+        define_syntax(PAUSE_SPRITE_ANIMATION, 1, TYPE_INTEGER); //ID in
+        command_table["STOP_SPRITE_ANIMATION"] = STOP_SPRITE_ANIMATION;
+        define_syntax(STOP_SPRITE_ANIMATION, 1, TYPE_INTEGER); //ID in
         command_table["NUDGE"] = NUDGE;
         define_syntax(NUDGE, 3, TYPE_DOUBLE, TYPE_DOUBLE, TYPE_DOUBLE); //velocity x, velocity y, duration
         command_table["HALT_NUDGE"] = HALT_NUDGE;
@@ -5186,10 +5206,20 @@ public:
                 case TYPE_DOUBLE:
                     if (arg_type == TYPE_DOUBLE)
                     {
-                        //TODO allow angles in degrees (converted to radians on parse)
                         try
                         {
-                            instruction->double_args.push_back(std::stod(arg_string));
+                            bool degrees = false;
+                            if (arg_string.back() == '*')
+                            {
+                                arg_string.pop_back();
+                                degrees = true;
+                            }
+                            double x = std::stod(arg_string);
+                            if (degrees)
+                            {
+                                x = x * PI / 180.0;
+                            }
+                            instruction->double_args.push_back(x);
                         } catch (std::invalid_argument &error)
                         {
                             console_log("SCRIPT PARSING ERROR: argument cannot be parsed");
@@ -5324,7 +5354,7 @@ public:
                     break;
                 }
             }
-            if (instant_run || instruction->command == INTEGER || instruction->command == DOUBLE || instruction->command == STRING || instruction->command == ARRAY)
+            if (instant_run || instruction->command == INTEGER || instruction->command == DOUBLE || instruction->command == STRING || instruction->command == ARRAY || instruction->command == TIMER)
             {
                 execute(instruction);
             }
@@ -6626,6 +6656,28 @@ public:
                 sprite_instance->start_synchronous_animation(instruction->int_args[1], instruction->int_args[3], instruction->double_args[0], table->global_time + instruction->double_args[1], instruction->int_args[2]);
             }
             break;
+        case PAUSE_SPRITE_ANIMATION:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= sprite_instances.size())
+                {
+                    console_log("SCRIPT ERROR: sprite out of range");
+                    return -1;
+                }
+                SpriteInstance* sprite_instance = sprite_instances[instruction->int_args[0]];
+                sprite_instance->pause_animation();
+            }
+            break;
+        case STOP_SPRITE_ANIMATION:
+            {
+                if (instruction->int_args[0] < 0 || static_cast<unsigned int>(instruction->int_args[0]) >= sprite_instances.size())
+                {
+                    console_log("SCRIPT ERROR: sprite out of range");
+                    return -1;
+                }
+                SpriteInstance* sprite_instance = sprite_instances[instruction->int_args[0]];
+                sprite_instance->stop_animation();
+            }
+            break;
         case NUDGE:
             {
                 if (table)
@@ -6708,6 +6760,7 @@ public:
             break;
         case SLINGSHOT_ACTION: //layer, collider ID in, kicker range, kicker speed, kicker bias
             {
+                //TODO support one-sided slingshot
                 //TODO (Phase X) test multiple balls at once
                 if (!table)
                 {
@@ -6754,14 +6807,19 @@ public:
                 }
                 for (unsigned int i = 0; i < table->layers[layer]->balls.size(); ++i)
                 {
-                    //TODO (Phase X) test negative range as opposite side slingshot
                     Ball* ball = table->layers[layer]->balls[i].first;
                     Point a_to_ball = Point(ball->position.x - a.x, ball->position.y - a.y);
                     double ball_bias = a_to_b_unit.dot_product(a_to_ball) / a_to_b_magnitude;
                     if (ball_bias > 0.0 && ball_bias < 1.0)
                     {
                         //TODO (Phase X) test bias system extensively
+                        //TODO (Phase X) test slingshot triggering by one ball to launch multiple dormant balls
                         Point a_to_b_unit_normal = Point(-a_to_b_unit.y, a_to_b_unit.x);
+                        if (a_to_b_unit_normal.dot_product(a_to_ball) < 0.0)
+                        {
+                            a_to_b_unit_normal.x *= -1.0;
+                            a_to_b_unit_normal.y *= -1.0;
+                        }
                         double ball_distance = a_to_b_unit_normal.dot_product(a_to_ball) - ball->radius;
                         double bias_match = ball_bias > bias ? (1.0 - ball_bias) / (1.0 - bias) : ball_bias / bias;
                         double range_at_bias = range * bias_match;
@@ -6777,6 +6835,7 @@ public:
                                 double root_center_bias_match = std::sqrt(center_bias_match);
                                 bounce_coefficient = root_center_bias_match * collider->bounce_coefficient + (1.0 - root_center_bias_match) * collider->outer_bounce_coefficient;
                             }
+                            //TODO swap direction of unit normal when ball is on other side
                             ball->bounce(&a_to_b_unit_normal, bounce_coefficient, collider->friction_coefficient, collider->impact_sound); //TODO apply bias here
                             ball->velocity.x += velocity_at_bias.x;
                             ball->velocity.y += velocity_at_bias.y;
@@ -9405,6 +9464,42 @@ int main(int argc, char* argv[])
     //TODO investigate cases where ball triggers one-way hole collider without becoming trapped in hole (note: this has been observed in real pinball)
     //TODO test game not responding after being left open while computer is asleep
     //TODO solution for ball-to-ball collisions across layer portals
+    std::string selected_table = "";
+    {
+        SDL_MessageBoxData message_box;
+        message_box.flags = SDL_MESSAGEBOX_BUTTONS_LEFT_TO_RIGHT;
+        message_box.window = nullptr;
+        message_box.title = "Original Pinball Compilation";
+        message_box.message = "Select a table:";
+        message_box.numbuttons = 2;
+        SDL_MessageBoxButtonData button1;
+        button1.buttonid = 1;
+        button1.text = "Magical Robot";
+        SDL_MessageBoxButtonData button2;
+        button2.buttonid = 2;
+        button2.text = "Saturn Strikes";
+        SDL_MessageBoxButtonData* buttons = new SDL_MessageBoxButtonData[message_box.numbuttons];
+        buttons[0] = button1;
+        buttons[1] = button2;
+        message_box.buttons = buttons;
+        int response = 0;
+        while (!response)
+        {
+            SDL_ShowMessageBox(&message_box, &response);
+        }
+        switch (response)
+        {
+        case 1:
+            selected_table = "scripts/Magical-Robot.txt";
+            break;
+        case 2:
+            selected_table = "scripts/Saturn-Strikes.txt";
+            break;
+        default:
+            return 0;
+        }
+    }
+
     try_set_working_directory();
     uint64_t initial_count = SDL_GetPerformanceCounter();
 
@@ -9434,7 +9529,10 @@ int main(int argc, char* argv[])
 
     Syntax syntax;
     InputHandler input_handler = InputHandler();
-    Script script(renderer, window, &syntax, "scripts/Magical-Robot.txt");
+    //TODO UI for selecting/loading scripts
+    //Script script(renderer, window, &syntax, "scripts/Magical-Robot.txt");
+    //Script script(renderer, window, &syntax, "scripts/Saturn-Strikes.txt");
+    Script script(renderer, window, &syntax, selected_table);
     script.window = window;
     script.view = &view;
     script.input_handler = &input_handler;

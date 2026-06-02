@@ -1,0 +1,2764 @@
+LOAD:
+	'TODO after uploading demo:
+	'	- award replays for high score
+	'	- match game
+	'	- backglass lights
+	'	- gamepad support
+	'	- implement FLASHING_LIGHTS setting
+	'	- tournament mode
+	'	- spinner SFX
+	'	- attract mode light show
+	'TODO account for case where ball hits skillshot just before playfield reset
+	'TODO fix display bug when queuing new player immediately after resetting game (such as by mashing start)
+	'TODO test reset while collecting bonus in eject hole
+	'TODO examine all timers for potential bugs resulting from finishing at wrong time (e.g. during end of ball or game over)
+	'TODO consider shortening reset timer
+	'TODO throw script error if GOSUB is called with a negative argument
+	'TODO deactivate hook shot light if active when draining
+	'TODO (low priority) prevent playfield validation during game over (or clear on game start)
+	'TODO (low priority) 5 credits for 4 quarters bonus pricing?
+	'TODO test reset during game extensively
+	'TODO add margins to HUD elements
+
+	INTEGER "temp_int" 0
+	INTEGER "temp_int_2" 0
+	INTEGER "temp_int_3" 0
+	INTEGER "temp_int_4" 0
+	STRING "temp_string" ""
+	DOUBLE "temp_double" 0.0
+	DOUBLE "temp_x" 0.0
+	DOUBLE "temp_y" 0.0
+	DOUBLE "nudge_x" 0.0
+	DOUBLE "nudge_y" 0.0
+	TIMER "plunger_sample_timer"
+	DOUBLE "plunger_speed" 0.0
+	TIMER "bonus_count_timer"
+	TIMER "launch_timer"
+	TIMER "reset_timer"
+	TIMER "score_timer"
+	TIMER "score_blink_timer"
+	'TODO implement FLASHING_LIGHTS setting?
+	TIMER "arrow_timer"
+	'TODO stop strobing arrows on drain
+	TIMER "left_bank_reset_timer"
+	TIMER "bonus_collect_timer"
+
+	INTEGER "replay_score" 50000
+
+	INTEGER "score_routine" -1
+	INTEGER "score_pending" 0
+	INTEGER "add_credit" -1
+	INTEGER "update_credit_display" -1
+	INTEGER "charge_credit" -1
+	INTEGER "tilt_routine" -1
+	INTEGER "update_ball_in_play" -1
+	INTEGER "update_upper_rollovers" -1
+	INTEGER "update_strike_lights" -1
+	INTEGER "advance_strike_light" -1
+	INTEGER "add_bonus" -1
+	INTEGER "update_bonus_ladder" -1
+	INTEGER "advance_bonus_multiplier" -1
+	INTEGER "update_bonus_multiplier" -1
+	INTEGER "update_arrow_lights" -1
+	INTEGER "update_eject_lights" -1
+	INTEGER "advance_bowling_reward" -1
+	INTEGER "update_bowling_lights" -1
+	INTEGER "get_bowling_multiplier" -1
+	INTEGER "strike_routine" -1
+	INTEGER "check_upper_rollovers" -1
+	INTEGER "strobe_EB_lights" -1
+	INTEGER "update_EB_lights" -1
+	INTEGER "check_left_bank" -1
+	INTEGER "check_right_bank" -1
+
+	INTEGER "save_score" -1
+	INTEGER "update_high_score" -1
+
+	TIMER "trough_kickout_timer"
+	INTEGER "trough_kickout_routine" -1
+	TIMER "eject_count_timer"
+	TIMER "eject_timer"
+	INTEGER "eject_routine" -1
+
+	INTEGER "left_button_down" 0
+	INTEGER "right_button_down" 0
+	INTEGER "left_upper_button_down" 0
+
+	'TODO test scores >= 10M
+	INTEGER "record" -1
+	LOAD_RECORD "records/Saturn-Strikes-records.txt" 1 "_" 0 record
+	INTEGER "high_score" 0
+	PRINT "Saturn Strikes"
+	PRINT "High score:"
+	GET_RECORD record 1 -1 high_score
+	MULTIPLY high_score 10 temp_int
+	INTEGER_TO_STRING temp_int temp_string
+	PRINT temp_string
+
+	TIMER "last_scores_timer"
+	TIMER "blank_timer_1"
+	TIMER "high_score_timer"
+	TIMER "blank_timer_2"
+	INTEGER "blank_all" -1
+
+	'TODO check that all game variables are set appropriately on playfield reset and tilt
+	'game variables
+	INTEGER "player" 0
+	INTEGER "player_count" 0
+	INTEGER "last_player_count" 1
+	INTEGER "ball_in_play" 0 '0 indicates game over
+	INTEGER "credits" 0
+	INTEGER "free_play" TRUE
+	ARRAY "score" 4 0
+	SET_ARRAY_ELEMENT score 0 high_score
+	INTEGER "playfield_validated" FALSE
+	INTEGER "trough_hole_occupied" TRUE
+	INTEGER "eject_hole_occupied" FALSE
+	INTEGER "suppress_playfield_reset" FALSE
+	INTEGER "tournament_mode" FALSE
+	'TODO implement tournament mode (no extra balls)
+	INTEGER "bonus" 0
+	INTEGER "bonus_multiplier" 1
+	INTEGER "extra_ball" FALSE
+	INTEGER "awaiting_reset" FALSE
+	INTEGER "hook_shot" TRUE
+	TIMER "hook_shot_timer"
+	ARRAY "strike_light" 4 0 '0 for unlit, 1-5 for corresponding target
+	INTEGER "arrow_lit" 0
+	INTEGER "eject_reward" 0
+	INTEGER "bowling_reward" 0 '0: none; 1: 2x bowling; 2: 3x bowling; 3: light extra ball on outlanes; 4: light special on standup
+	INTEGER "spinner_lit" FALSE
+	INTEGER "spinner_ripping" FALSE
+	TIMER "spinner_timer"
+	INTEGER "special_lit" FALSE
+	INTEGER "extra_ball_lit" 0 '0: unlit; 1: lit on left; 2: lit on right
+	INTEGER "right_bank_waiting" FALSE
+	INTEGER "temp_bonus" 0
+
+	ARRAY "target_memory" 4 255 'index represents player, with each value being a bitwise representation of target states (3 LSB are 3-bank, 5 MSB are 5-bank)
+	INTEGER "write_target_memory" -1
+	INTEGER "recall_targets" -1
+
+	ARRAY "super_bonus_memory" 4 1
+
+	ARRAY "upper_rollovers" 3 0
+
+	'sounds
+	INTEGER "roll_sound" -1
+	LOAD_SOUND "sound/common/roll.wav" TRACK_PHYSICAL roll_sound
+
+	'Note: omitted because there is only 1 ball
+	'INTEGER "ball_collision_sound" -1
+	'LOAD_SOUND "sound/common/ball-collision.wav" TRACK_PHYSICAL ball_collision_sound
+
+	INTEGER "kickout" -1
+	LOAD_SOUND "sound/common/kickout.wav" TRACK_PHYSICAL kickout
+
+	INTEGER "solenoid" -1
+	LOAD_SOUND "sound/common/solenoid.wav" TRACK_PHYSICAL solenoid
+
+	INTEGER "knocker" -1
+	LOAD_SOUND "sound/common/knocker.wav" TRACK_TABLE knocker
+
+	INTEGER "metal_collision" -1
+	LOAD_SOUND "sound/common/metal-collision.wav" TRACK_PHYSICAL metal_collision
+	METAL_SOUND metal_collision
+
+	INTEGER "wood_collision" -1
+	LOAD_SOUND "sound/common/wood-collision.wav" TRACK_PHYSICAL wood_collision
+	WOOD_SOUND wood_collision
+
+	INTEGER "plastic_collision" -1
+	LOAD_SOUND "sound/common/plastic-collision.wav" TRACK_PHYSICAL plastic_collision
+	PLASTIC_SOUND plastic_collision
+
+	INTEGER "rubber_collision" -1
+	LOAD_SOUND "sound/common/rubber-collision.wav" TRACK_PHYSICAL rubber_collision
+	RUBBER_SOUND rubber_collision
+
+	INTEGER "nudge" -1
+	LOAD_SOUND "sound/common/nudge.wav" TRACK_PHYSICAL nudge
+	NUDGE_SOUND nudge
+
+	INTEGER "drop_target" -1
+	LOAD_SOUND "sound/common/drop-target.wav" TRACK_PHYSICAL drop_target
+
+	'TODO implement
+	INTEGER "raise_target" -1
+	LOAD_SOUND "sound/common/raise-target.wav" TRACK_PHYSICAL raise_target
+
+	INTEGER "flipper_bounce_sound" -1
+	LOAD_SOUND "sound/common/flipper-bounce.wav" TRACK_PHYSICAL flipper_bounce_sound
+
+	INTEGER "plunger_collision_sound" -1
+	LOAD_SOUND "sound/common/plunger-collision.wav" TRACK_PHYSICAL plunger_collision_sound
+
+	INTEGER "plunger_bounce_sound" -1
+	LOAD_SOUND "sound/common/plunger-bounce.wav" TRACK_PHYSICAL plunger_bounce_sound
+
+	INTEGER "gate_collision_sound" -1
+	LOAD_SOUND "sound/common/gate-collision.wav" TRACK_PHYSICAL gate_collision_sound
+
+	INTEGER "tilt" 0
+
+	TABLE 27.5 43.0 STANDARD_NUDGE
+	TILT_BOB 1.5 33.0 0.3 -1.0 -1.0 -1.0
+
+	INTEGER "backglass" -1
+	BACKGLASS 0.25 -25.0 27.0 23.5 backglass
+	DESIGNATE_BACKGLASS backglass
+
+	'TODO indicator lights, ladders, other sprites needed for debugging
+	'TODO consider making displays cyan
+
+	ARRAY "score_displays" 4 -1
+
+	INTEGER "score_display_1" -1
+	ALPHANUMERIC_DISPLAY 7 7 255 128 0 24 48 "fonts/common/7segment.png" "fonts/common/7segment_protocol.txt" score_display_1
+	ADD_ALPHANUMERIC_DISPLAY backglass score_display_1 2.8 5.0
+	'AND_SHOW_NUMBER score_display_1 0 7 ALIGN_RIGHT 0 FALSE TRUE
+	SET_ARRAY_ELEMENT score_displays 0 score_display_1
+
+	INTEGER "score_display_2" -1
+	ALPHANUMERIC_DISPLAY 7 7 255 128 0 24 48 "fonts/common/7segment.png" "fonts/common/7segment_protocol.txt" score_display_2
+	ADD_ALPHANUMERIC_DISPLAY backglass score_display_2 19.5 5.0
+	'AND_SHOW_NUMBER score_display_2 0 7 ALIGN_RIGHT 0 FALSE TRUE
+	SET_ARRAY_ELEMENT score_displays 1 score_display_2
+
+	INTEGER "score_display_3" -1
+	ALPHANUMERIC_DISPLAY 7 7 255 128 0 24 48 "fonts/common/7segment.png" "fonts/common/7segment_protocol.txt" score_display_3
+	ADD_ALPHANUMERIC_DISPLAY backglass score_display_3 19.5 10.0
+	'AND_SHOW_NUMBER score_display_3 0 7 ALIGN_RIGHT 0 FALSE TRUE
+	SET_ARRAY_ELEMENT score_displays 2 score_display_3
+
+	INTEGER "score_display_4" -1
+	ALPHANUMERIC_DISPLAY 7 7 255 128 0 24 48 "fonts/common/7segment.png" "fonts/common/7segment_protocol.txt" score_display_4
+	ADD_ALPHANUMERIC_DISPLAY backglass score_display_4 19.5 15.0
+	'AND_SHOW_NUMBER score_display_4 0 7 ALIGN_RIGHT 0 FALSE TRUE
+	SET_ARRAY_ELEMENT score_displays 3 score_display_4
+
+	INTEGER "credit_display" -1
+	ALPHANUMERIC_DISPLAY 2 7 255 128 0 24 48 "fonts/common/7segment.png" "fonts/common/7segment_protocol.txt" credit_display
+	ADD_ALPHANUMERIC_DISPLAY backglass credit_display 6.8 17.5
+	AND_SHOW_NUMBER credit_display 0 2 ALIGN_RIGHT 0 FALSE FALSE
+
+	INTEGER "ball_in_play_display" -1
+	ALPHANUMERIC_DISPLAY 2 7 255 128 0 24 48 "fonts/common/7segment.png" "fonts/common/7segment_protocol.txt" ball_in_play_display
+	ADD_ALPHANUMERIC_DISPLAY backglass ball_in_play_display 9.5 17.5
+	AND_SHOW_NUMBER ball_in_play_display 0 2 ALIGN_RIGHT 0 FALSE FALSE
+
+	INTEGER "playfield" -1
+	LAYER 0.0 0.0 27.5 43.0 GRADIENT_CONSTANT 0.0 33.49906 13.75 21.5 playfield '5.0 degree slope
+	INTEGER "hump_incline" -1
+	LAYER 0.0 0.0 27.5 43.0 GRADIENT_CONSTANT -55.0170727074 53.2445454741 10.125 20.5 hump_incline
+	INTEGER "hump_decline" -1
+	LAYER 0.0 0.0 27.5 43.0 GRADIENT_CONSTANT 25.1090613811 9.96311570285 10.125 20.5 hump_decline
+	'TODO adjust gradients on hump layers to be physically consistent
+	'TODO add layer portals to hump layers
+
+	INTEGER "playfield_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/playfield.png" 880 1376 0.0 0.0 playfield_spritesheet
+	INTEGER "playfield_sprite" -1
+	SPRITE playfield_spritesheet playfield BELOW_BALL 0.0 0.0 playfield_sprite
+
+	BALL_RETURN 0 26.25 36.0
+
+	INTEGER "ball_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/common/ball.png" 34 34 17.0 17.0 ball_spritesheet
+	BALL playfield 11.9 41.5 -1.0 -1.0 -1.0 TRUE TRUE ball_spritesheet -1 roll_sound -1
+
+	INTEGER "bonus_1_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-1-light.png" 24 24 12.0 12.0 bonus_1_spritesheet
+	INTEGER "bonus_2_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-2-light.png" 24 24 12.0 12.0 bonus_2_spritesheet
+	INTEGER "bonus_3_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-3-light.png" 24 24 12.0 12.0 bonus_3_spritesheet
+	INTEGER "bonus_4_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-4-light.png" 24 24 12.0 12.0 bonus_4_spritesheet
+	INTEGER "bonus_5_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-5-light.png" 24 24 12.0 12.0 bonus_5_spritesheet
+	INTEGER "bonus_6_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-6-light.png" 24 24 12.0 12.0 bonus_6_spritesheet
+	INTEGER "bonus_7_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-7-light.png" 24 24 12.0 12.0 bonus_7_spritesheet
+	INTEGER "bonus_8_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-8-light.png" 24 24 12.0 12.0 bonus_8_spritesheet
+	INTEGER "bonus_9_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-9-light.png" 24 24 12.0 12.0 bonus_9_spritesheet
+	INTEGER "bonus_10_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-10-light.png" 24 24 12.0 12.0 bonus_10_spritesheet
+
+	INTEGER "bonus_1_light" -1
+	SPRITE bonus_1_spritesheet playfield BELOW_BALL 12.5 31.0 bonus_1_light
+	INTEGER "bonus_2_light" -1
+	SPRITE bonus_2_spritesheet playfield BELOW_BALL 11.92 30.0 bonus_2_light
+	INTEGER "bonus_3_light" -1
+	SPRITE bonus_3_spritesheet playfield BELOW_BALL 13.08 30.0 bonus_3_light
+	INTEGER "bonus_4_light" -1
+	SPRITE bonus_4_spritesheet playfield BELOW_BALL 11.34 29.0 bonus_4_light
+	INTEGER "bonus_5_light" -1
+	SPRITE bonus_5_spritesheet playfield BELOW_BALL 12.5 29.0 bonus_5_light
+	INTEGER "bonus_6_light" -1
+	SPRITE bonus_6_spritesheet playfield BELOW_BALL 13.65 29.0 bonus_6_light
+	INTEGER "bonus_7_light" -1
+	SPRITE bonus_7_spritesheet playfield BELOW_BALL 10.77 28.0 bonus_7_light
+	INTEGER "bonus_8_light" -1
+	SPRITE bonus_8_spritesheet playfield BELOW_BALL 11.92 28.0 bonus_8_light
+	INTEGER "bonus_9_light" -1
+	SPRITE bonus_9_spritesheet playfield BELOW_BALL 13.08 28.0 bonus_9_light
+	INTEGER "bonus_10_light" -1
+	SPRITE bonus_10_spritesheet playfield BELOW_BALL 14.23 28.0 bonus_10_light
+
+	INTEGER "bonus_20_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-20-light.png" 32 32 16.0 16.0 bonus_20_spritesheet
+	INTEGER "bonus_30_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-30-light.png" 32 32 16.0 16.0 bonus_30_spritesheet
+	INTEGER "bonus_40_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-40-light.png" 32 32 16.0 16.0 bonus_40_spritesheet
+
+	INTEGER "bonus_20_light" -1
+	SPRITE bonus_20_spritesheet playfield BELOW_BALL 11.0 26.5 bonus_20_light
+	INTEGER "bonus_30_light" -1
+	SPRITE bonus_30_spritesheet playfield BELOW_BALL 12.5 26.5 bonus_30_light
+	INTEGER "bonus_40_light" -1
+	SPRITE bonus_40_spritesheet playfield BELOW_BALL 14.0 26.5 bonus_40_light
+
+	INTEGER "bonus_2x_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-2x-light.png" 32 32 16.0 16.0 bonus_2x_spritesheet
+	INTEGER "bonus_3x_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-3x-light.png" 32 32 16.0 16.0 bonus_3x_spritesheet
+	INTEGER "bonus_4x_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-4x-light.png" 32 32 16.0 16.0 bonus_4x_spritesheet
+	INTEGER "bonus_5x_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/bonus-5x-light.png" 32 32 16.0 16.0 bonus_5x_spritesheet
+
+	INTEGER "bonus_2x_light" -1
+	SPRITE bonus_2x_spritesheet playfield BELOW_BALL 10.35 32.5 bonus_2x_light
+	INTEGER "bonus_3x_light" -1
+	SPRITE bonus_3x_spritesheet playfield BELOW_BALL 11.75 33.0 bonus_3x_light
+	INTEGER "bonus_4x_light" -1
+	SPRITE bonus_4x_spritesheet playfield BELOW_BALL 13.25 33.0 bonus_4x_light
+	INTEGER "bonus_5x_light" -1
+	SPRITE bonus_5x_spritesheet playfield BELOW_BALL 14.65 32.5 bonus_5x_light
+
+	INTEGER "rollover_1_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/1-light.png" 32 32 16.0 16.0 rollover_1_spritesheet
+	INTEGER "rollover_2_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/2-light.png" 32 32 16.0 16.0 rollover_2_spritesheet
+	INTEGER "rollover_3_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/3-light.png" 32 32 16.0 16.0 rollover_3_spritesheet
+
+	'Note: contrary to EM convention, rollover lights are off at game start
+	INTEGER "rollover_1_light" -1
+	SPRITE rollover_1_spritesheet playfield BELOW_BALL 9.0 12.5 rollover_1_light
+	SET_SPRITE_FRAME rollover_1_light 0
+	INTEGER "rollover_2_light" -1
+	SPRITE rollover_2_spritesheet playfield BELOW_BALL 10.8 12.0 rollover_2_light
+	SET_SPRITE_FRAME rollover_2_light 0
+	INTEGER "rollover_3_light" -1
+	SPRITE rollover_3_spritesheet playfield BELOW_BALL 12.6 11.5 rollover_3_light
+	SET_SPRITE_FRAME rollover_3_light 0
+
+	'plunger lane
+	POINT 26.625 38.0 -1
+	METAL -1 playfield
+	POINT 25.875 38.0 -1
+	METAL -1 playfield
+
+	INTEGER "plunger_arc" -1
+	ARC 26.25 38.365 0.365 3.14159265 6.28318531 plunger_arc
+	INTEGER "plunger" -1
+	MOBILE plunger_arc 26.25 38.365 0.0 0.0 0.0 3.0 0.0 0.0 1.4 1.0 plunger
+	SET_MOBILE_SOUNDS plunger plunger_bounce_sound -1
+	SOLID plunger playfield 1.24 -0.82 plunger_collision_sound
+
+	INTEGER "plunger_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/plunger.png" 24 24 12.0 12.0 plunger_spritesheet
+	INTEGER "plunger_sprite" -1
+	SPRITE plunger_spritesheet playfield ABOVE_BALL 0.0 0.0 plunger_sprite
+	SYNC_SPRITE plunger_sprite plunger
+
+	TURTLE_TELEPORT 26.875 38.0
+	TURTLE_SET_HEADING -90.0*
+	TURTLE_LINE 8.5 -1
+	WOOD -1 playfield
+	TURTLE_ARC 4.25 -60.0* -1
+	METAL -1 playfield
+
+	INTEGER "plunger_lane_gate" -1
+	LINE 24.7 28.5 24.7 25.5 plunger_lane_gate
+	SOLID plunger_lane_gate playfield 1.50 0.05 gate_collision_sound
+	GATE plunger_lane_gate -1
+
+	'right orbit passive slingshot
+	TURTLE_LINE 2.5 -1
+	METAL -1 playfield
+	TURTLE_ARC 0.3 107.5* -1
+	RUBBER -1 playfield
+	INTEGER "passive_slingshot_1" -1
+	TURTLE_LINE 2.5 passive_slingshot_1
+	RUBBER_BAND passive_slingshot_1 playfield
+	SET_SENSITIVITY passive_slingshot_1 4.75
+	TURTLE_ARC 0.3 137.5* -1
+	RUBBER -1 playfield
+
+	'right orbit
+	TURTLE_TELEPORT 22.9381 24.3667
+	TURTLE_SET_HEADING -50.0*
+	TURTLE_ARC 16.75 -40.0* -1
+	METAL -1 playfield
+	TURTLE_ARC 13.0 -90.0* -1
+	METAL -1 playfield 
+	TURTLE_LINE 4.0 -1
+	METAL -1 playfield
+
+	INTEGER "right_orbit_gate" -1
+	LINE 21.6 6.25 23.6 4.25 right_orbit_gate
+	SOLID right_orbit_gate playfield 1.50 0.05 gate_collision_sound
+	GATE right_orbit_gate -1
+
+	INTEGER "eject_hole" -1
+	CIRCLE 18.22 8.62 0.675 eject_hole
+	WOOD eject_hole playfield
+	GATE eject_hole -1
+	INTEGER "eject_hole_magnet" -1
+	MAGNET playfield 18.22 8.62 96.5225 0.9 0.5 TRUE eject_hole_magnet
+	INTEGER "top_post" -1
+	CIRCLE 14.25 1.0 0.3 top_post
+	RUBBER top_post playfield
+
+	'right crossover lane
+	TURTLE_TELEPORT 25.55 38.0
+	TURTLE_SET_HEADING -90.0*
+	TURTLE_LINE 3.6 -1
+	WOOD -1 playfield
+	TURTLE_POINT -1
+	WOOD -1 playfield
+	TURTLE_FORWARD 1.6
+	TURTLE_POINT -1
+	WOOD -1 playfield
+	TURTLE_SET_HEADING 150.0*
+	TURTLE_LINE 3.5 -1
+	WOOD -1 playfield
+	TURTLE_POINT -1
+	WOOD -1 playfield
+	TURTLE_TURN 180.0*
+	TURTLE_FORWARD 3.5
+	TURTLE_SET_HEADING -90.0*
+	TURTLE_LINE 2.8 -1
+	WOOD -1 playfield
+	TURTLE_ARC 3.0 -40.0* -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 -140.0* -1
+	RUBBER -1 playfield
+
+	TURTLE_LINE 1.4 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 2.0 60.0* -1
+	PLASTIC -1 playfield
+	TURTLE_LINE 0.8 -1
+
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 -60.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 2.5 -1
+	PLASTIC -1 playfield
+	TURTLE_TURN 60.0*
+	TURTLE_LINE 8.0 -1
+	METAL -1 playfield
+	TURTLE_POINT -1
+	METAL -1 playfield
+
+	'right lane divider
+	TURTLE_TELEPORT 23.1 28.75
+	TURTLE_SET_HEADING 90.0*
+	TURTLE_LINE 1.1 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.1 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+
+	INTEGER "red_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/common/red-light.png" 24 24 12.0 12.0 red_light_spritesheet
+	INTEGER "right_EB_light" -1
+	SPRITE red_light_spritesheet playfield BELOW_BALL 21.9 27.75 right_EB_light
+
+	'right slingshot
+	INTEGER "right_slingshot" -1
+	TURTLE_TELEPORT 21.2 28.2
+	TURTLE_SET_HEADING 90.0*
+	TURTLE_LINE 2.75 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 60.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 3.5 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 153.963* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 5.426 right_slingshot
+	RUBBER_BAND right_slingshot playfield
+	TURTLE_ARC 0.3 146.037* -1
+	RUBBER -1 playfield
+	SET_SENSITIVITY right_slingshot 4.75
+	GATE right_slingshot -1 'TODO change from gate collision to dedicated failsafe mode
+
+	'right inlane gate
+	INTEGER "right_inlane_gate" -1
+	TURTLE_TELEPORT 20.9 33.4
+	TURTLE_SET_HEADING -90.0*
+	TURTLE_LINE 2.5 right_inlane_gate
+	SOLID right_inlane_gate playfield 1.50 0.05 gate_collision_sound
+	GATE right_inlane_gate -1
+
+	'inside right orbit
+	TURTLE_TELEPORT 20.0 7.5
+	TURTLE_SET_HEADING 135.0*
+	TURTLE_ARC 0.3 -100.0* -1
+	RUBBER -1 playfield
+	TURTLE_ARC 9.0 80.0* -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 -175.0* -1
+	RUBBER -1 playfield
+	TURTLE_ARC 10.5 -30.0* -1
+	PLASTIC -1 playfield
+	TURTLE_LINE 0.7 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 10.5 -45.0* -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 -90.0* -1
+	RUBBER -1 playfield
+	INTEGER "passive_slingshot_2" -1
+	TURTLE_LINE 2.05 passive_slingshot_2
+	RUBBER_BAND passive_slingshot_2 playfield
+	SET_SENSITIVITY passive_slingshot_2 4.75
+	
+	'spinner
+	INTEGER "spinner_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/spinner.png" 52 58 26.0 29.0 spinner_spritesheet
+	INTEGER "spinner_sprite" -1
+	SPRITE spinner_spritesheet playfield ABOVE_BALL 20.86 14.95 spinner_sprite
+
+	INTEGER "spinner_line" -1
+	INTEGER "spinner" -1
+	TURTLE_TELEPORT 23.04 19.14
+	TURTLE_SET_HEADING -65.0*
+	TURTLE_ARC 4.0 -90.0* -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 110.0* -1
+	PLASTIC -1 playfield
+	TURTLE_LINE 3.0 -1
+	PLASTIC -1 playfield
+	TURTLE_TURN 180.0*
+	TURTLE_FORWARD 3.0
+	TURTLE_TURN -90.0*
+	TURTLE_FORWARD 0.3
+	TURTLE_SET_HEADING 105.0*
+	TURTLE_LINE 2.9 spinner_line
+	SPINNER spinner_line playfield -1.0 -1.0 -1.0 -1.0 spinner_sprite 32 spinner
+	TURTLE_TURN 90.0*
+	TURTLE_FORWARD 0.3
+	TURTLE_TURN -90.0*
+	TURTLE_ARC 0.3 -360.0* -1
+	RUBBER -1 playfield
+
+	INTEGER "spinner_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/spinner-light.png" 32 64 16.0 32.0 spinner_light_spritesheet
+	INTEGER "spinner_light" -1
+	SPRITE spinner_light_spritesheet playfield BELOW_BALL 21.25 21.0 spinner_light
+
+	'left orbit
+	TURTLE_TELEPORT 0.75 26.3
+	TURTLE_SET_HEADING -18.0*
+	INTEGER "passive_slingshot_3" -1
+	TURTLE_LINE 2.6 passive_slingshot_3
+	RUBBER_BAND passive_slingshot_3 playfield
+	SET_SENSITIVITY passive_slingshot_3 4.75
+	TURTLE_ARC 0.3 -50.0* -1
+	RUBBER -1 playfield
+	INTEGER "passive_slingshot_4" -1
+	TURTLE_LINE 3.5 passive_slingshot_4
+	RUBBER_BAND passive_slingshot_4 playfield
+	SET_SENSITIVITY passive_slingshot_4 4.75
+	TURTLE_ARC 0.3 -72.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 3.0 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 90.0* -1
+	PLASTIC -1 playfield
+	TURTLE_LINE 0.8 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 -90.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.0 -1
+	METAL -1 playfield
+	TURTLE_ARC 3.75 50.0* -1
+	METAL -1 playfield
+	TURTLE_LINE 5.5 -1
+	METAL -1 playfield
+	TURTLE_ARC 2.25 30.0* -1'120.0* -1
+	METAL -1 playfield
+	TURTLE_LINE 0.75 -1
+	METAL -1 playfield
+	TURTLE_ARC 2.0 150.0* -1
+	METAL -1 playfield
+	TURTLE_ARC 0.3 -150.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 8.8 -1
+	RUBBER -1 playfield
+	TURTLE_ARC 0.3 -120.0* -1
+	RUBBER -1 playfield
+
+	INTEGER "left_orbit_switch" -1
+	LINE 1.625 10.375 1.625 11.5 -1
+	SWITCH -1 playfield left_orbit_switch
+
+	INTEGER "standup_target" -1
+	TURTLE_TELEPORT 2.4 19.6
+	TURTLE_SET_HEADING -50.0*
+	TURTLE_POINT temp_int
+	TURTLE_LINE 1.0 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 standup_target
+	PLASTIC standup_target playfield
+	SET_DETECTION_NORMAL standup_target 40.0*
+	SET_SENSITIVITY standup_target 1.0
+
+	INTEGER "standup_target_light" -1
+	SPRITE red_light_spritesheet playfield BELOW_BALL 3.75 19.9 standup_target_light
+
+	INTEGER "left_drop_target_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/3-bank-target.png" 23 30 19.0 4.0 left_drop_target_spritesheet
+	INTEGER "arrow_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/arrow-light.png" 32 24 16.0 12.0 arrow_light_spritesheet
+
+	'3-bank
+	INTEGER "left_drop_target_1" -1
+	INTEGER "left_drop_target_2" -1
+	INTEGER "left_drop_target_3" -1
+	INTEGER "left_drop_target_1_sprite" -1
+	INTEGER "left_drop_target_2_sprite" -1
+	INTEGER "left_drop_target_3_sprite" -1
+	INTEGER "arrow_light_1" -1
+	INTEGER "arrow_light_2" -1
+	INTEGER "arrow_light_3" -1
+
+	TURTLE_TELEPORT 3.8 25.5
+	TURTLE_SET_HEADING -68.0*
+	TURTLE_POINT temp_int
+	TURTLE_LINE 0.8 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 left_drop_target_1
+	PLASTIC left_drop_target_1 playfield
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE left_drop_target_spritesheet playfield BELOW_BALL temp_x temp_y left_drop_target_1_sprite
+	SET_SPRITE_FRAME left_drop_target_1_sprite 1
+	D_ADD temp_x 0.78 temp_x
+	D_ADD temp_y 0.75 temp_y
+	SPRITE arrow_light_spritesheet playfield BELOW_BALL temp_x temp_y arrow_light_1
+
+	TURTLE_FORWARD 0.5
+	TURTLE_POINT temp_int
+	TURTLE_LINE 0.8 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 left_drop_target_2
+	PLASTIC left_drop_target_2 playfield
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE left_drop_target_spritesheet playfield BELOW_BALL temp_x temp_y left_drop_target_2_sprite
+	SET_SPRITE_FRAME left_drop_target_2_sprite 1
+	D_ADD temp_x 0.78 temp_x
+	D_ADD temp_y 0.75 temp_y
+	SPRITE arrow_light_spritesheet playfield BELOW_BALL temp_x temp_y arrow_light_2
+
+	TURTLE_FORWARD 0.5
+	TURTLE_POINT temp_int
+	TURTLE_LINE 0.8 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 left_drop_target_3
+	PLASTIC left_drop_target_3 playfield
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE left_drop_target_spritesheet playfield BELOW_BALL temp_x temp_y left_drop_target_3_sprite
+	SET_SPRITE_FRAME left_drop_target_3_sprite 1
+	D_ADD temp_x 0.78 temp_x
+	D_ADD temp_y 0.75 temp_y
+	SPRITE arrow_light_spritesheet playfield BELOW_BALL temp_x temp_y arrow_light_3
+
+	SET_DETECTION_NORMAL left_drop_target_1 22.0*
+	SET_SENSITIVITY left_drop_target_1 16.0
+	SET_DETECTION_NORMAL left_drop_target_2 22.0*
+	SET_SENSITIVITY left_drop_target_2 16.0
+	SET_DETECTION_NORMAL left_drop_target_3 22.0*
+	SET_SENSITIVITY left_drop_target_3 16.0
+	'TODO passive slingshots, including behind drop targets
+
+	'left outlane/apron
+	TURTLE_TELEPORT 0.65 26.55
+	TURTLE_SET_HEADING 90.0*
+	TURTLE_ARC 0.3 -360.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 6.9 -1
+	WOOD -1 playfield
+	TURTLE_TURN -60.0*
+	TURTLE_LINE 10.25 -1
+	METAL -1 playfield
+	TURTLE_POINT -1
+	METAL -1 playfield
+
+	INTEGER "left_EB_light" -1
+	SPRITE red_light_spritesheet playfield BELOW_BALL 1.3 27.75 left_EB_light
+
+	'left slingshot
+	INTEGER "left_slingshot" -1
+	TURTLE_TELEPORT 4.2 29.35
+	TURTLE_SET_HEADING 30.0*
+	TURTLE_LINE 4.0 left_slingshot
+	RUBBER_BAND left_slingshot playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 4.0 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_TELEPORT 4.2 28.45
+	TURTLE_ARC 0.3 360.0* -1
+	RUBBER -1 playfield
+	SET_SENSITIVITY left_slingshot 4.75
+	GATE left_slingshot -1 'TODO change from gate collision to dedicated failsafe mode
+
+	'upper flipper/plastic
+	INTEGER "upper_flipper" -1
+	FLIPPER playfield 4.6 12.2 45.0* -50.0* 2.0 0.3 0.15 upper_flipper
+	SET_MOBILE_SOUNDS upper_flipper -1 flipper_bounce_sound
+	TURTLE_TELEPORT 2.7 12.8
+	TURTLE_SET_HEADING -90.0*
+	TURTLE_LINE 3.25 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 150.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 2.379 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 75.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.682 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 135.0* -1
+	RUBBER -1 playfield
+
+	'5-bank
+	TURTLE_TELEPORT 12.45 3.5
+	TURTLE_SET_HEADING 45.0*
+	INTEGER "passive_slingshot_5" -1
+	TURTLE_LINE 5.65 passive_slingshot_5
+	RUBBER_BAND passive_slingshot_5 playfield
+	SET_SENSITIVITY passive_slingshot_5 4.75
+	TURTLE_ARC 0.3 100.0* -1
+	RUBBER -1 playfield
+	INTEGER "passive_slingshot_6" -1
+	TURTLE_LINE 3.01 passive_slingshot_6
+	RUBBER_BAND passive_slingshot_6 playfield
+	SET_SENSITIVITY passive_slingshot_6 4.75
+	TURTLE_ARC 0.3 110.0* -1
+	RUBBER -1 playfield
+	INTEGER "passive_slingshot_7" -1
+	TURTLE_LINE 5.92 passive_slingshot_7
+	RUBBER_BAND passive_slingshot_7 playfield
+	SET_SENSITIVITY passive_slingshot_7 4.75
+	TURTLE_ARC 0.3 150.0* -1
+	RUBBER -1 playfield
+
+	INTEGER "right_drop_target_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/5-bank-target.png" 19 30 10.0 28.0 right_drop_target_spritesheet
+
+	INTEGER "right_drop_target_1" -1
+	INTEGER "right_drop_target_2" -1
+	INTEGER "right_drop_target_3" -1
+	INTEGER "right_drop_target_4" -1
+	INTEGER "right_drop_target_5" -1
+
+	INTEGER "right_drop_target_1_sprite" -1
+	INTEGER "right_drop_target_2_sprite" -1
+	INTEGER "right_drop_target_3_sprite" -1
+	INTEGER "right_drop_target_4_sprite" -1
+	INTEGER "right_drop_target_5_sprite" -1
+
+	'TODO consider having drop targets ABOVE_BALL when standing and BELOW_BALL when hit
+
+	TURTLE_TELEPORT 13.1 9.7
+	TURTLE_SET_HEADING 255.0*
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_drop_target_spritesheet playfield BELOW_BALL temp_x temp_y right_drop_target_1_sprite
+	SET_SPRITE_FRAME right_drop_target_1_sprite 1
+	TURTLE_POINT temp_int
+	TURTLE_LINE 0.8 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 right_drop_target_1
+	PLASTIC right_drop_target_1 playfield
+	TURTLE_FORWARD 0.5
+
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_drop_target_spritesheet playfield BELOW_BALL temp_x temp_y right_drop_target_2_sprite
+	SET_SPRITE_FRAME right_drop_target_2_sprite 1
+	TURTLE_POINT temp_int
+	TURTLE_LINE 0.8 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 right_drop_target_2
+	PLASTIC right_drop_target_2 playfield
+	TURTLE_FORWARD 0.5
+
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_drop_target_spritesheet playfield BELOW_BALL temp_x temp_y right_drop_target_3_sprite
+	SET_SPRITE_FRAME right_drop_target_3_sprite 1
+	TURTLE_POINT temp_int
+	TURTLE_LINE 0.8 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 right_drop_target_3
+	PLASTIC right_drop_target_3 playfield
+	TURTLE_FORWARD 0.5
+
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_drop_target_spritesheet playfield BELOW_BALL temp_x temp_y right_drop_target_4_sprite
+	SET_SPRITE_FRAME right_drop_target_4_sprite 1
+	TURTLE_POINT temp_int
+	TURTLE_LINE 0.8 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 right_drop_target_4
+	PLASTIC right_drop_target_4 playfield
+	TURTLE_FORWARD 0.5
+
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE right_drop_target_spritesheet playfield BELOW_BALL temp_x temp_y right_drop_target_5_sprite
+	SET_SPRITE_FRAME right_drop_target_5_sprite 1
+	TURTLE_POINT temp_int
+	TURTLE_LINE 0.8 -1
+	TURTLE_POINT temp_int_2
+	COMPOSITE temp_int temp_int_2 right_drop_target_5
+	PLASTIC right_drop_target_5 playfield
+
+	SET_DETECTION_NORMAL right_drop_target_1 165.0*
+	SET_SENSITIVITY right_drop_target_1 16.0
+	SET_DETECTION_NORMAL right_drop_target_2 165.0*
+	SET_SENSITIVITY right_drop_target_2 16.0
+	SET_DETECTION_NORMAL right_drop_target_3 165.0*
+	SET_SENSITIVITY right_drop_target_3 16.0
+	SET_DETECTION_NORMAL right_drop_target_4 165.0*
+	SET_SENSITIVITY right_drop_target_4 16.0
+	SET_DETECTION_NORMAL right_drop_target_5 165.0*
+	SET_SENSITIVITY right_drop_target_5 16.0
+
+	INTEGER "white_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/common/white-light.png" 24 24 12.0 12.0 white_light_spritesheet
+	TURTLE_TELEPORT 12.3 9.5
+	TURTLE_SET_HEADING 255.0*
+	TURTLE_GET_POSITION temp_x temp_y
+	INTEGER "white_light_1_sprite" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL temp_x temp_y white_light_1_sprite
+	TURTLE_FORWARD 1.3
+	TURTLE_GET_POSITION temp_x temp_y
+	INTEGER "white_light_2_sprite" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL temp_x temp_y white_light_2_sprite
+	TURTLE_FORWARD 1.3
+	TURTLE_GET_POSITION temp_x temp_y
+	INTEGER "white_light_3_sprite" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL temp_x temp_y white_light_3_sprite
+	TURTLE_FORWARD 1.3
+	TURTLE_GET_POSITION temp_x temp_y
+	INTEGER "white_light_4_sprite" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL temp_x temp_y white_light_4_sprite
+	TURTLE_FORWARD 1.3
+	TURTLE_GET_POSITION temp_x temp_y
+	INTEGER "white_light_5_sprite" -1
+	SPRITE white_light_spritesheet playfield BELOW_BALL temp_x temp_y white_light_5_sprite
+
+	'eject hole rewards
+	'Note: scores subject to change; names may not match actual values
+	TURTLE_TELEPORT 18.22 8.62
+	TURTLE_SET_HEADING -80.0*
+	TURTLE_FORWARD 1.75
+	INTEGER "eject_10k_light" -1
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE white_light_spritesheet playfield BELOW_BALL temp_x temp_y eject_10k_light
+	INTEGER "eject_30k_light" -1
+	TURTLE_FORWARD 1.1
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE white_light_spritesheet playfield BELOW_BALL temp_x temp_y eject_30k_light
+	INTEGER "eject_50k_light" -1
+	TURTLE_FORWARD 1.1
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE white_light_spritesheet playfield BELOW_BALL temp_x temp_y eject_50k_light
+
+	INTEGER "bonus_collect_light" -1
+	TURTLE_FORWARD 1.1
+	TURTLE_GET_POSITION temp_x temp_y
+	SPRITE red_light_spritesheet playfield BELOW_BALL temp_x temp_y bonus_collect_light
+
+	'bowling rewards
+	TURTLE_TELEPORT 8.75 7.8
+	TURTLE_GET_POSITION temp_x temp_y
+	INTEGER "bowling_2x_light" -1
+	SPRITE bonus_2x_spritesheet playfield BELOW_BALL temp_x temp_y bowling_2x_light
+	TURTLE_SET_HEADING -15.0*
+	TURTLE_FORWARD 1.5
+	TURTLE_GET_POSITION temp_x temp_y
+	INTEGER "bowling_3x_light" -1
+	SPRITE bonus_3x_spritesheet playfield BELOW_BALL temp_x temp_y bowling_3x_light
+
+	'rollovers
+	INTEGER "upper_rollover_3" -1
+	TURTLE_TELEPORT 13.8 12.0
+	TURTLE_SET_HEADING 75.0*
+	TURTLE_LINE 1.4 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.4 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_TURN 90.0*
+	TURTLE_FORWARD 1.2
+	TURTLE_TURN -90.0*
+	TURTLE_FORWARD 0.2
+	TURTLE_LINE 1.0 -1
+	SWITCH -1 playfield upper_rollover_3
+
+	INTEGER "upper_rollover_2" -1
+	TURTLE_TELEPORT 12.0 12.5
+	TURTLE_SET_HEADING 75.0*
+	TURTLE_LINE 1.4 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.4 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_TURN 90.0*
+	TURTLE_FORWARD 1.2
+	TURTLE_TURN -90.0*
+	TURTLE_FORWARD 0.2
+	TURTLE_LINE 1.0 -1
+	SWITCH -1 playfield upper_rollover_2
+
+	INTEGER "upper_rollover_1" -1
+	TURTLE_TELEPORT 10.2 13.0
+	TURTLE_SET_HEADING 75.0*
+	TURTLE_LINE 1.4 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.4 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_TURN 90.0*
+	TURTLE_FORWARD 1.2
+	TURTLE_TURN -90.0*
+	TURTLE_FORWARD 0.2
+	TURTLE_LINE 1.0 -1
+	SWITCH -1 playfield upper_rollover_1
+
+	TURTLE_TELEPORT 8.4 13.5
+	TURTLE_SET_HEADING 75.0*
+	TURTLE_LINE 1.4 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.4 -1
+	RUBBER_BAND -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+
+	'left flipper
+	INTEGER "left_flipper" -1
+	FLIPPER playfield 7.75 34.5 40.0* -52.0* 3.0 0.3 0.15 left_flipper
+	SET_MOBILE_SOUNDS left_flipper -1 flipper_bounce_sound
+	TURTLE_TELEPORT 7.75 34.0
+	TURTLE_SET_HEADING -150.0*
+	TURTLE_POINT -1
+	METAL -1 playfield
+	TURTLE_LINE 5.2 -1
+	METAL -1 playfield
+	TURTLE_ARC 1.5 60.0* -1
+	METAL -1 playfield
+	TURTLE_LINE 1.4 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 0.3 -180.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 1.4 -1
+	PLASTIC -1 playfield
+	TURTLE_ARC 2.1 -60.0* -1
+	METAL -1 playfield
+	TURTLE_LINE 5.2 -1
+	METAL -1 playfield
+	TURTLE_POINT -1
+	METAL -1 playfield
+
+	'right flipper
+	INTEGER "right_flipper" -1
+	FLIPPER playfield 17.5 35.5 150.0* 52.0* 3.0 0.3 0.15 right_flipper
+	SET_MOBILE_SOUNDS right_flipper -1 flipper_bounce_sound
+	TURTLE_TELEPORT 17.5 35.0
+	TURTLE_SET_HEADING -30.0*
+	TURTLE_POINT -1
+	METAL -1 playfield
+	TURTLE_LINE 3.75 -1
+	METAL -1 playfield
+	TURTLE_ARC 0.3 180.0* -1
+	RUBBER -1 playfield
+	TURTLE_LINE 3.75 -1
+	METAL -1 playfield
+
+	INTEGER "left_flipper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/left-flipper.png" 80 70 11.0 11.0 left_flipper_spritesheet
+	INTEGER "left_flipper_sprite" -1
+	SPRITE left_flipper_spritesheet playfield ABOVE_BALL 0.0 0.0 left_flipper_sprite
+	SYNC_SPRITE left_flipper_sprite left_flipper
+
+	INTEGER "right_flipper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/right-flipper.png" 87 58 76.0 11.0 right_flipper_spritesheet
+	INTEGER "right_flipper_sprite" -1
+	SPRITE right_flipper_spritesheet playfield ABOVE_BALL 0.0 0.0 right_flipper_sprite
+	SYNC_SPRITE right_flipper_sprite right_flipper
+
+	INTEGER "upper_flipper_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/upper-flipper.png" 52 53 11.0 11.0 upper_flipper_spritesheet
+	INTEGER "upper_flipper_sprite" -1
+	SPRITE upper_flipper_spritesheet playfield ABOVE_BALL 0.0 0.0 upper_flipper_sprite
+	SYNC_SPRITE upper_flipper_sprite upper_flipper
+
+	INTEGER "center_bumper" -1
+	CIRCLE 12.5 37.0 1.0 center_bumper
+	METAL center_bumper playfield
+	SET_SENSITIVITY center_bumper 4.0
+	GATE center_bumper 1 'TODO change from gate collision to dedicated failsafe mode
+
+	'Note: bumpers 1 and 2 have been removed for balance
+	'INTEGER "bumper_1" -1
+	'CIRCLE 10.75 23.75 1.0 bumper_1
+	'METAL bumper_1 playfield
+	'SET_SENSITIVITY bumper_1 4.0
+	'GATE bumper_1 1 'TODO change from gate collision to dedicated failsafe mode
+
+	'INTEGER "bumper_2" -1
+	'CIRCLE 13.75 26.0 1.0 bumper_2
+	'METAL bumper_2 playfield
+	'SET_SENSITIVITY bumper_2 4.0
+	'GATE bumper_2 1 'TODO change from gate collision to dedicated failsafe mode
+
+	INTEGER "bumper_3" -1
+	CIRCLE 16.25 16.25- 1.0 bumper_3
+	METAL bumper_3 playfield
+	SET_SENSITIVITY bumper_3 4.0
+	GATE bumper_3 1 'TODO change from gate collision to dedicated failsafe mode
+
+	INTEGER "bumper_4" -1
+	CIRCLE 18.5 19.5 1.0 bumper_4
+	METAL bumper_4 playfield
+	SET_SENSITIVITY bumper_4 4.0
+	GATE bumper_4 1 'TODO change from gate collision to dedicated failsafe mode
+
+	INTEGER "left_outlane_rollover" -1
+	LINE 1.25 28.75 1.25 29.75 -1
+	SWITCH -1 playfield left_outlane_rollover
+	INTEGER "left_inlane_rollover" -1
+	LINE 3.125 28.75 3.125 29.75 -1
+	SWITCH -1 playfield left_inlane_rollover
+	INTEGER "right_inlane_rollover" -1
+	LINE 21.875 28.75 21.875 29.75 -1
+	SWITCH -1 playfield right_inlane_rollover
+	INTEGER "right_outlane_rollover" -1
+	LINE 23.75 28.75 23.75 29.75 -1
+	SWITCH -1 playfield right_outlane_rollover
+
+	INTEGER "hook_shot_magnet" -1
+	MAGNET playfield 3.125 27.25 0.0 1.53125 0.53125 FALSE hook_shot_magnet
+
+	INTEGER "hook_shot_light_spritesheet" -1
+	LOAD_SPRITESHEET "graphics/SaturnStrikes/triangle-light.png" 64 16 32.0 8.0 hook_shot_light_spritesheet
+	INTEGER "hook_shot_light" -1
+	SPRITE hook_shot_light_spritesheet playfield BELOW_BALL 5.0 27.25 hook_shot_light
+	SET_SPRITE_FRAME hook_shot_light 1
+
+
+	'ball trough
+	TURTLE_TELEPORT 9.5 39.0
+	TURTLE_SET_HEADING 1.04719755
+	TURTLE_POINT -1
+	METAL -1 playfield
+	TURTLE_LINE 3.25 -1
+	METAL -1 playfield
+	TURTLE_TURN -0.523598776
+	TURTLE_LINE 0.878460972 -1
+	METAL -1 playfield
+	TURTLE_SET_HEADING -30.0*
+	TURTLE_LINE 15.75 -1
+	METAL -1 playfield
+	METAL -1 hump_incline
+	METAL -1 hump_decline
+	TURTLE_POINT -1
+	METAL -1 playfield
+
+	'INTEGER "hump_decline_out_line" -1
+	'TURTLE_SET_HEADING -1.57079632679
+	'TURTLE_LINE 1.2 hump_decline_out_line
+	'INTEGER "hump_decline_out_portal" -1
+	'SWITCH hump_decline_out_line hump_decline hump_decline_out_portal
+	'LAYER_PORTAL hump_decline_out_line playfield
+	'GATE hump_decline_out_line 1
+
+	'INTEGER "hump_decline_out_reverse_line" -1
+	'TURTLE_SET_HEADING 1.57079632679
+	'TURTLE_LINE 1.2 hump_decline_out_reverse_line
+	'INTEGER "hump_decline_out_reverse_portal" -1
+	'SWITCH hump_decline_out_reverse_line playfield hump_decline_out_reverse_portal
+	'LAYER_PORTAL hump_decline_out_reverse_line hump_decline
+	'GATE hump_decline_out_reverse_line 1
+
+	'INTEGER "hump_incline_in_line" -1
+	'TURTLE_TELEPORT 10.39 36.64
+	'TURTLE_SET_HEADING 1.07553439079
+	'TURTLE_LINE 1.3 hump_incline_in_line
+	'INTEGER "hump_incline_in_portal" -1
+	'SWITCH hump_incline_in_line playfield hump_incline_in_portal
+	'LAYER_PORTAL hump_incline_in_line hump_incline
+	'GATE hump_incline_in_line -1
+
+	'INTEGER "hump_incline_in_reverse_line" -1
+	'TURTLE_TURN 3.14159265359
+	'TURTLE_LINE 1.3 hump_incline_in_reverse_line
+	'INTEGER "hump_incline_in_reverse_portal" -1
+	'SWITCH hump_incline_in_reverse_line hump_incline hump_incline_in_reverse_portal
+	'LAYER_PORTAL hump_incline_in_reverse_line playfield
+	'GATE hump_incline_in_reverse_line -1
+
+	'INTEGER "hump_incline_out_line" -1
+	'TURTLE_TURN 1.57079632679
+	'TURTLE_FORWARD 3.25
+	'TURTLE_TURN 1.57079632679
+	'TURTLE_LINE 1.3 hump_incline_out_line
+	'INTEGER "hump_incline_out_portal" -1
+	'SWITCH hump_incline_out_line hump_incline hump_incline_out_portal
+	'LAYER_PORTAL hump_incline_out_line hump_decline
+	'GATE hump_incline_out_line -1
+
+	'INTEGER "hump_incline_out_reverse_line" -1
+	'TURTLE_TURN 3.14159265359
+	'TURTLE_LINE 1.3 hump_incline_out_reverse_line
+	'INTEGER "hump_incline_out_reverse_portal" -1
+	'SWITCH hump_incline_out_reverse_line hump_decline hump_incline_out_reverse_portal
+	'LAYER_PORTAL hump_incline_out_reverse_line hump_incline
+	'GATE hump_incline_out_reverse_line -1
+
+	INTEGER "trough_hole" -1
+	CIRCLE 11.9 41.5 0.6 trough_hole
+	WOOD trough_hole playfield
+	GATE trough_hole -1
+	INTEGER "trough_hole_magnet" -1
+	MAGNET playfield 11.9 41.5 96.5225 0.6 0.5 TRUE trough_hole_magnet
+
+	TIMER "debug_timer"
+	START_TIMER debug_timer 0.01
+	START_TIMER blank_timer_2 0.5
+BREAK
+LABEL save_score
+	GET_ARRAY_ELEMENT score 0 temp_int
+	SAVE_RECORD record "records/Saturn-Strikes-records.txt" "" temp_int
+	GOSUB update_high_score
+	GET_ARRAY_ELEMENT score 1 temp_int
+	SAVE_RECORD record "records/Saturn-Strikes-records.txt" "" temp_int
+	GOSUB update_high_score
+	GET_ARRAY_ELEMENT score 2 temp_int
+	SAVE_RECORD record "records/Saturn-Strikes-records.txt" "" temp_int
+	GOSUB update_high_score
+	GET_ARRAY_ELEMENT score 3 temp_int
+	SAVE_RECORD record "records/Saturn-Strikes-records.txt" "" temp_int
+	GOSUB update_high_score
+RETURN
+LABEL update_high_score
+	'TODO test with rollover
+	GREATER temp_int 1000000 temp_int_2
+	WHILE temp_int_2
+		SUBTRACT temp_int 1000000 temp_int
+		GREATER temp_int 1000000 temp_int_2
+	WEND
+	GREATER temp_int high_score temp_int_2
+	IF temp_int_2
+		SET_INTEGER high_score temp_int
+	ENDIF
+RETURN
+INPUT_DOWN ANALOG_PLUNGER:
+TIMER_DONE plunger_sample_timer:
+	MOBILE_BOUNCE plunger FALSE
+	SET_MOBILE_SPRING_CONSTANT plunger 0.0
+	GET_ANALOG_INPUT ANALOG_PLUNGER plunger_speed
+	D_LESS plunger_speed -8.0 temp_int
+	IF temp_int
+		SET_DOUBLE plunger_speed -8.0
+	ENDIF
+	SET_MOBILE_VELOCITY plunger 0.0 plunger_speed
+	START_TIMER plunger_sample_timer 0.05
+BREAK
+INPUT_UP ANALOG_PLUNGER:
+	SET_MOBILE_VELOCITY plunger 0.0 0.0
+	PAUSE_TIMER plunger_sample_timer
+BREAK
+INPUT_DOWN INPUT_PLUNGER:
+	MOBILE_BOUNCE plunger TRUE
+	SET_MOBILE_SPRING_CONSTANT plunger 771.8 '0.033 inch wire
+BREAK
+INPUT_DOWN INPUT_COIN:
+	'TODO sound effect
+	GOSUB add_credit
+BREAK
+INPUT_DOWN INPUT_LEFT_FLIPPER:
+	NOT left_button_down temp_int
+	IF temp_int
+		SET_INTEGER left_button_down 1
+		NOT ball_in_play temp_int
+		OR temp_int tilt temp_int
+		IF temp_int
+			BREAK
+		ENDIF
+		PLAY_SOUND solenoid 48
+		SET_MOBILE_ANGULAR_ACCELERATION left_flipper -720.0
+	ENDIF
+BREAK
+INPUT_UP INPUT_LEFT_FLIPPER:
+	SET_INTEGER left_button_down 0
+	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
+BREAK
+INPUT_DOWN INPUT_RIGHT_FLIPPER:
+	NOT right_button_down temp_int
+	IF temp_int
+		SET_INTEGER right_button_down 1
+		NOT ball_in_play temp_int
+		OR temp_int tilt temp_int
+		IF temp_int
+			BREAK
+		ENDIF
+		SHIFT_ARRAY upper_rollovers 1
+		GOSUB update_upper_rollovers
+		PLAY_SOUND solenoid 48
+		SET_MOBILE_ANGULAR_ACCELERATION right_flipper 720.0
+	ENDIF
+BREAK
+INPUT_UP INPUT_RIGHT_FLIPPER:
+	SET_INTEGER right_button_down 0
+	SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
+BREAK
+INPUT_DOWN INPUT_LEFT_UPPER_FLIPPER:
+	NOT left_upper_button_down temp_int
+	IF temp_int
+		SET_INTEGER left_upper_button_down 1
+		NOT ball_in_play temp_int
+		OR temp_int tilt temp_int
+		IF temp_int
+			BREAK
+		ENDIF
+		PLAY_SOUND solenoid 48
+		SET_MOBILE_ANGULAR_ACCELERATION upper_flipper -720.0
+	ENDIF
+BREAK
+INPUT_UP INPUT_LEFT_UPPER_FLIPPER:
+	SET_INTEGER left_upper_button_down 0
+	SET_MOBILE_ANGULAR_ACCELERATION upper_flipper 320.0
+BREAK
+INPUT_DOWN INPUT_NUDGE:
+	'TODO consider limiting magnitude of nudge vector
+	GET_ANALOG_INPUT ANALOG_NUDGE_X nudge_x
+	GET_ANALOG_INPUT ANALOG_NUDGE_Y nudge_y
+	NUDGE nudge_x nudge_y 0.15
+BREAK
+INPUT_UP INPUT_NUDGE:
+	HALT_NUDGE
+BREAK
+INPUT_DOWN INPUT_LEFT_SECONDARY:
+	'TODO deactivate magnet and stop animation on tilt or end of ball
+	'TODO respect flashing lights setting
+	NOT ball_in_play temp_int
+	OR temp_int tilt temp_int
+	IF temp_int
+		BREAK
+	ENDIF
+	IF hook_shot
+		SET_INTEGER hook_shot FALSE
+		MAGNET_POWER hook_shot_magnet 512.0
+		START_TIMER hook_shot_timer 5.0
+		LOOP_SPRITE_ANIMATION hook_shot_light 0 0 2 30.0 -1
+	ENDIF
+BREAK
+TIMER_DONE hook_shot_timer:
+	MAGNET_POWER hook_shot_magnet 0.0
+	STOP_SPRITE_ANIMATION hook_shot_light
+	SET_SPRITE_FRAME hook_shot_light hook_shot
+BREAK
+INPUT_DOWN INPUT_START:
+	IF credits
+		LESS player_count 4 temp_int
+		IF temp_int
+			GOSUB charge_credit
+		ENDIF
+	ELSE
+		NOT free_play temp_int
+		IF temp_int
+			BREAK
+		ENDIF
+	ENDIF
+	LESS ball_in_play 2 temp_int
+	IF temp_int
+		LESS player_count 4 temp_int
+		IF temp_int
+			GET_ARRAY_ELEMENT score_displays player_count temp_int
+			AND_CLEAR temp_int FALSE
+			AND_SHOW_NUMBER temp_int 0 7 ALIGN_RIGHT 0 FALSE TRUE
+			ADD player_count 1 player_count
+			'TODO
+			'GOSUB update_queued_players
+		ENDIF
+	ELSE
+		'reset during game
+		GOSUB save_score
+		IF playfield_validated
+			'must enter game over state and wait for ball to reach trough, then start new game
+			GOSUB tilt_routine
+			SET_INTEGER ball_in_play 0
+			SET_INTEGER player 0
+			SET_INTEGER player_count 1
+			SET_INTEGER awaiting_reset TRUE
+			'TODO
+			'GOSUB update_queued_players
+			GOSUB update_ball_in_play
+		ELSE
+			'must start new game without launching ball, assuming it could be anywhere but the trough (probably on plunger)
+			'TODO reset game state when ball is not validated
+			'important: target memory means it is necessary to reset banks in this case
+			SET_INTEGER ball_in_play 0
+			SET_INTEGER player 0
+			SET_INTEGER player_count 1
+			'TODO
+			'GOSUB update_queued_players
+			GOSUB update_ball_in_play
+		ENDIF
+	ENDIF
+	NOT ball_in_play temp_int
+	IF temp_int
+		'starting new game
+		GOSUB blank_all
+		PAUSE_TIMER last_scores_timer
+		PAUSE_TIMER blank_timer_1
+		PAUSE_TIMER high_score_timer
+		PAUSE_TIMER blank_timer_2
+		CLEAR_ARRAY score 0
+		SET_INTEGER bonus 0
+		CLEAR_ARRAY super_bonus_memory 1
+		GOSUB update_bonus_ladder
+		CLEAR_ARRAY strike_light 0
+		CLEAR_ARRAY target_memory 255
+		SET_INTEGER arrow_lit 0
+		GOSUB update_arrow_lights
+		SET_INTEGER eject_reward 0
+		GOSUB update_eject_lights
+		SET_INTEGER bowling_reward 0
+		'GOSUB update_bowling_lights
+		PAUSE_TIMER arrow_timer
+		NOT playfield_validated temp_int
+		IF temp_int
+			START_TIMER bonus_count_timer 0.25
+		ENDIF
+		'TODO display score before setting timer
+		START_TIMER score_timer 0.25
+	ENDIF
+BREAK
+TILT_BOB_CONTACT:
+	GOSUB tilt_routine
+BREAK
+LABEL charge_credit
+	IF credits
+		SUBTRACT credits 1 credits
+		GOSUB update_credit_display
+	ENDIF
+RETURN
+LABEL trough_kickout_routine
+	IF trough_hole_occupied
+		SET_INTEGER trough_hole_occupied FALSE
+		TANGIBLE trough_hole FALSE
+		MAGNET_POWER trough_hole_magnet 0.0
+		PLAY_SOUND kickout 24
+		KICKOUT_ACTION playfield 11.9 41.5 playfield 27.8388220359 -15.0375907688
+		START_TIMER trough_kickout_timer 0.25
+	ENDIF
+RETURN
+LABEL tilt_routine
+	SET_INTEGER tilt TRUE
+	'TODO tilt light
+	'SET_SPRITE_FRAME tilt_light 1
+	SET_INTEGER bonus 0
+	SET_INTEGER temp_bonus 0
+	GOSUB update_bonus_ladder
+	SET_INTEGER bonus_multiplier 1
+	GOSUB update_bonus_multiplier
+	CLEAR_ARRAY upper_rollovers 0
+	GOSUB update_upper_rollovers
+	SET_INTEGER eject_reward 0
+	GOSUB update_eject_lights
+	SET_SPRITE_FRAME white_light_1_sprite 0
+	SET_SPRITE_FRAME white_light_2_sprite 0
+	SET_SPRITE_FRAME white_light_3_sprite 0
+	SET_SPRITE_FRAME white_light_4_sprite 0
+	SET_SPRITE_FRAME white_light_5_sprite 0
+	SET_INTEGER bowling_reward 0
+	GOSUB update_bowling_lights
+	MAGNET_POWER hook_shot_magnet 0.0
+	PAUSE_TIMER hook_shot_timer
+	SET_INTEGER hook_shot FALSE
+	STOP_SPRITE_ANIMATION hook_shot_light
+	SET_SPRITE_FRAME hook_shot_light 0
+	SET_INTEGER extra_ball_lit 0
+	GOSUB update_EB_lights
+	STOP_SPRITE_ANIMATION standup_target_light
+	SET_SPRITE_FRAME standup_target_light 0
+	STOP_SPRITE_ANIMATION spinner_light
+	SET_SPRITE_FRAME spinner_light 0
+	PAUSE_TIMER arrow_timer
+	STOP_SPRITE_ANIMATION arrow_light_1
+	STOP_SPRITE_ANIMATION arrow_light_2
+	STOP_SPRITE_ANIMATION arrow_light_3
+	SET_SPRITE_FRAME arrow_light_1 0
+	SET_SPRITE_FRAME arrow_light_2 0
+	SET_SPRITE_FRAME arrow_light_3 0
+	SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
+	SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
+	SET_MOBILE_ANGULAR_ACCELERATION upper_flipper 320.0
+RETURN
+'TODO attract routine (playfield)
+'attract mode backglass routine
+TIMER_DONE last_scores_timer:
+	GOSUB blank_all
+	START_TIMER blank_timer_1 0.5
+BREAK
+TIMER_DONE blank_timer_1:
+	GET_ARRAY_ELEMENT score_displays 0 temp_int
+	AND_CLEAR temp_int FALSE
+	AND_SHOW_NUMBER temp_int high_score 7 ALIGN_RIGHT 0 FALSE TRUE
+	GET_ARRAY_ELEMENT score_displays 1 temp_int
+	AND_CLEAR temp_int FALSE
+	AND_SHOW_NUMBER temp_int high_score 7 ALIGN_RIGHT 0 FALSE TRUE
+	GET_ARRAY_ELEMENT score_displays 2 temp_int
+	AND_CLEAR temp_int FALSE
+	AND_SHOW_NUMBER temp_int high_score 7 ALIGN_RIGHT 0 FALSE TRUE
+	GET_ARRAY_ELEMENT score_displays 3 temp_int
+	AND_CLEAR temp_int FALSE
+	AND_SHOW_NUMBER temp_int high_score 7 ALIGN_RIGHT 0 FALSE TRUE
+	START_TIMER high_score_timer 1.125
+BREAK
+TIMER_DONE high_score_timer:
+	GOSUB blank_all
+	START_TIMER blank_timer_2 0.5
+BREAK
+TIMER_DONE blank_timer_2:
+	GET_ARRAY_ELEMENT score 0 temp_int
+	GET_ARRAY_ELEMENT score_displays 0 temp_int_2
+	AND_CLEAR temp_int_2 FALSE
+	AND_SHOW_NUMBER temp_int_2 temp_int 7 ALIGN_RIGHT 0 FALSE TRUE
+
+	GREATER last_player_count 1 temp_int
+	IF temp_int
+		GET_ARRAY_ELEMENT score 1 temp_int
+		GET_ARRAY_ELEMENT score_displays 1 temp_int_2
+		AND_CLEAR temp_int_2 FALSE
+		AND_SHOW_NUMBER temp_int_2 temp_int 7 ALIGN_RIGHT 0 FALSE TRUE
+	ENDIF
+
+	GREATER last_player_count 2 temp_int
+	IF temp_int
+		GET_ARRAY_ELEMENT score 2 temp_int
+		GET_ARRAY_ELEMENT score_displays 2 temp_int_2
+		AND_CLEAR temp_int_2 FALSE
+		AND_SHOW_NUMBER temp_int_2 temp_int 7 ALIGN_RIGHT 0 FALSE TRUE
+	ENDIF
+
+	GREATER last_player_count 3 temp_int
+	IF temp_int
+		GET_ARRAY_ELEMENT score 3 temp_int
+		GET_ARRAY_ELEMENT score_displays 3 temp_int_2
+		AND_CLEAR temp_int_2 FALSE
+		AND_SHOW_NUMBER temp_int_2 temp_int 7 ALIGN_RIGHT 0 FALSE TRUE
+	ENDIF
+
+	START_TIMER last_scores_timer 4.5
+BREAK
+LABEL blank_all
+	GET_ARRAY_ELEMENT score_displays 0 temp_int
+	AND_CLEAR temp_int FALSE
+	GET_ARRAY_ELEMENT score_displays 1 temp_int
+	AND_CLEAR temp_int FALSE
+	GET_ARRAY_ELEMENT score_displays 2 temp_int
+	AND_CLEAR temp_int FALSE
+	GET_ARRAY_ELEMENT score_displays 3 temp_int
+	AND_CLEAR temp_int FALSE
+RETURN
+TIMER_DONE score_timer:
+	GET_ARRAY_ELEMENT score_displays player temp_int
+	AND_CLEAR temp_int FALSE
+	START_TIMER score_blink_timer 0.1
+BREAK
+TIMER_DONE score_blink_timer:
+	GET_ARRAY_ELEMENT score player temp_int
+	GET_ARRAY_ELEMENT score_displays player temp_int_2
+	AND_CLEAR temp_int_2 FALSE
+	AND_SHOW_NUMBER temp_int_2 temp_int 7 ALIGN_RIGHT 0 FALSE TRUE
+	START_TIMER score_timer 0.25
+BREAK
+TIMER_DONE trough_kickout_timer:
+	TANGIBLE trough_hole TRUE
+	MAGNET_POWER trough_hole_magnet 96.5225
+BREAK
+TIMER_DONE launch_timer:
+	GOSUB trough_kickout_routine
+BREAK
+COLLISION trough_hole:
+	NOT trough_hole_occupied temp_int
+	IF temp_int
+		SET_INTEGER trough_hole_occupied TRUE
+		IF awaiting_reset
+			SET_INTEGER awaiting_reset FALSE
+			SET_INTEGER playfield_validated FALSE
+			START_TIMER bonus_count_timer 0.25
+			BREAK
+		ENDIF
+		OR playfield_validated tilt temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated FALSE
+			IF ball_in_play
+				START_TIMER bonus_count_timer 0.25
+				SET_INTEGER arrow_lit 0
+				GOSUB update_arrow_lights
+				PAUSE_TIMER arrow_timer
+			ELSE
+				SET_ARRAY_ELEMENT score 0 0
+				SET_ARRAY_ELEMENT score 1 0
+				SET_ARRAY_ELEMENT score 2 0
+				SET_ARRAY_ELEMENT score 3 0
+			ENDIF
+		ELSE
+			START_TIMER launch_timer 0.5
+		ENDIF
+	ENDIF
+BREAK
+TIMER_DONE bonus_count_timer:
+	IF bonus
+		SUBTRACT bonus 1 bonus
+		GOSUB update_bonus_ladder
+		SET_INTEGER temp_int 100
+		MULTIPLY temp_int bonus_multiplier temp_int
+		SET_INTEGER score_pending temp_int
+		GOSUB score_routine
+		START_TIMER bonus_count_timer 0.25
+	ELSE
+		IF ball_in_play
+			IF extra_ball
+				SET_INTEGER extra_ball FALSE
+				'TODO
+				'SET_SPRITE_FRAME shoot_again_light 0
+				'SET_SPRITE_FRAME backglass_shoot_again_light 0
+			ELSE
+				GET_ARRAY_ELEMENT score player temp_int
+				GET_ARRAY_ELEMENT score_displays player temp_int_2
+				AND_CLEAR temp_int_2 FALSE
+				AND_SHOW_NUMBER temp_int_2 temp_int 7 ALIGN_RIGHT 0 FALSE TRUE
+				ADD player 1 player
+				EQUAL player player_count temp_int
+				IF temp_int
+					SET_INTEGER player 0
+					ADD ball_in_play 1 ball_in_play
+					START_TIMER score_timer 0.25
+				ENDIF
+				GOSUB update_ball_in_play
+			ENDIF
+		ELSE
+			SET_INTEGER player 0
+			SET_INTEGER ball_in_play 1
+			GOSUB update_ball_in_play
+			'TODO
+			'GOSUB update_match_lights
+		ENDIF
+		LESS ball_in_play 4 temp_int
+		IF temp_int
+			GOSUB trough_kickout_routine
+			'TODO observe reset timing on real SS games
+			START_TIMER reset_timer 1.5
+		ELSE
+			GOSUB save_score
+			SET_INTEGER ball_in_play 0
+			SET_INTEGER player 0
+			GOSUB update_ball_in_play
+			'TODO
+			'GET_ARRAY_ELEMENT match_sequence match_position match_digit
+			'GOSUB update_match_lights
+			'SET_INTEGER temp_int 0
+			'SET_INTEGER temp_int_4 0
+			'LESS temp_int player_count temp_int_2
+			'WHILE temp_int_2
+			'	GET_ARRAY_ELEMENT score temp_int temp_int_3
+			'	DIVIDE temp_int_3 10 temp_int_3
+			'	MODULO temp_int_3 10 temp_int_3
+			'	EQUAL temp_int_3 match_digit temp_int_3
+			'	IF temp_int_3
+			'		GOSUB add_credit
+			'	ENDIF
+			'	ADD temp_int_4 temp_int_3 temp_int_4
+			'	ADD temp_int 1 temp_int
+			'	LESS temp_int player_count temp_int_2
+			'WEND
+			'IF temp_int_4
+			'	'TODO play once per match
+			'	PLAY_SOUND knocker 64
+			'ENDIF
+			'TODO award 3 credits if high_score (as displayed) is beaten
+			'alternatively, do this when the score is passed instead of when the game ends (may repeat due to rollover)
+			SET_INTEGER last_player_count player_count
+			SET_INTEGER player_count 0
+			'GOSUB update_queued_players
+			SET_MOBILE_ANGULAR_ACCELERATION left_flipper 320.0
+			SET_MOBILE_ANGULAR_ACCELERATION right_flipper -320.0
+			PAUSE_TIMER score_timer
+			PAUSE_TIMER score_blink_timer
+			START_TIMER last_scores_timer 4.5
+		ENDIF
+	ENDIF
+BREAK
+TIMER_DONE reset_timer:
+	EQUAL ball_in_play 1 temp_int
+	OR temp_int tilt temp_int
+	IF temp_int
+		IF left_button_down
+			PLAY_SOUND solenoid 48
+			SET_MOBILE_ANGULAR_ACCELERATION left_flipper -640.0
+		ENDIF
+		IF right_button_down
+			PLAY_SOUND solenoid 48
+			SET_MOBILE_ANGULAR_ACCELERATION right_flipper 640.0
+		ENDIF
+	ENDIF
+	SET_INTEGER extra_ball FALSE
+	CLEAR_ARRAY upper_rollovers FALSE
+	GOSUB update_upper_rollovers
+
+	MAGNET_POWER hook_shot_magnet 0.0
+	PAUSE_TIMER hook_shot_timer
+	SET_INTEGER hook_shot TRUE
+	STOP_SPRITE_ANIMATION hook_shot_light
+	SET_SPRITE_FRAME hook_shot_light 1
+
+	GET_ARRAY_ELEMENT super_bonus_memory player temp_int
+	SET_INTEGER bonus temp_int
+	GOSUB update_bonus_ladder
+	SET_INTEGER bonus_multiplier 1
+	GOSUB update_bonus_multiplier
+
+	SET_INTEGER arrow_lit 1
+	GOSUB update_arrow_lights
+	START_TIMER arrow_timer 2.0
+
+	SET_INTEGER eject_reward 1
+	GOSUB update_eject_lights
+
+	SET_INTEGER bowling_reward 0
+	GOSUB update_bowling_lights
+
+	PAUSE_TIMER spinner_timer
+	SET_INTEGER spinner_lit 0
+	SET_INTEGER spinner_ripping 0
+	STOP_SPRITE_ANIMATION spinner_light
+
+	SET_INTEGER special_lit FALSE
+	IF playfield_validated
+		SET_SPRITE_FRAME standup_target_light 0
+	ELSE
+		'TODO respect FLASHING_LIGHTS setting
+		LOOP_SPRITE_ANIMATION standup_target_light 0 0 2 8.0 -1
+	ENDIF
+
+	SET_INTEGER extra_ball_lit 0
+	GOSUB update_EB_lights
+
+	SET_INTEGER right_bank_waiting FALSE
+
+	'TODO
+	'SET_SPRITE_FRAME shoot_again_light 0
+	'SET_SPRITE_FRAME backglass_shoot_again_light 0
+	'CLEAR_ARRAY rollovers FALSE
+	'SET_INTEGER rollovers_hit 0
+	'TODO reset playfield lights
+	'TODO reset drop targets according to memory
+	GOSUB recall_targets
+	GOSUB update_strike_lights
+	SET_INTEGER tilt FALSE
+	'TODO tilt light
+	'SET_SPRITE_FRAME tilt_light 0
+BREAK
+LABEL update_ball_in_play
+	EQUAL ball_in_play 0 temp_int
+	'TODO
+	'SET_SPRITE_FRAME game_over_light temp_int
+	'TODO research if ball in play backglass lights are used in addition to display
+	'EQUAL ball_in_play 1 temp_int
+	'SET_SPRITE_FRAME ball_1_light temp_int
+	'EQUAL ball_in_play 2 temp_int
+	'SET_SPRITE_FRAME ball_2_light temp_int
+	'EQUAL ball_in_play 3 temp_int
+	'SET_SPRITE_FRAME ball_3_light temp_int
+	'EQUAL ball_in_play 4 temp_int
+	'SET_SPRITE_FRAME ball_4_light temp_int
+	'EQUAL ball_in_play 5 temp_int
+	'SET_SPRITE_FRAME ball_5_light temp_int
+	AND_CLEAR ball_in_play_display FALSE
+	AND_SHOW_NUMBER ball_in_play_display ball_in_play 2 ALIGN_RIGHT 0 FALSE FALSE
+	IF ball_in_play
+		'TODO manage displays according to current player (flash score)
+	ELSE
+		'TODO set all displays for game over
+	ENDIF
+RETURN
+COLLISION right_slingshot:
+	IF tilt
+		BREAK
+	ENDIF
+	NOT playfield_validated temp_int
+	IF temp_int
+		SET_INTEGER playfield_validated TRUE
+		STOP_SPRITE_ANIMATION standup_target_light
+	ENDIF
+	SET_INTEGER score_pending 1
+	GOSUB score_routine
+	PLAY_SOUND solenoid 48
+	SLINGSHOT_ACTION playfield right_slingshot 0.5 28.0 0.5
+	'TODO
+	'LOOP_SPRITE_ANIMATION right_slingshot_sprite 0 0 3 30.0 1
+BREAK
+COLLISION left_slingshot:
+	'Note: double trigger likely results from glitch rather than being the cause of it
+	IF tilt
+		BREAK
+	ENDIF
+	NOT playfield_validated temp_int
+	IF temp_int
+		SET_INTEGER playfield_validated TRUE
+		STOP_SPRITE_ANIMATION standup_target_light
+	ENDIF
+	SET_INTEGER score_pending 1
+	GOSUB score_routine
+	PLAY_SOUND solenoid 48
+	SLINGSHOT_ACTION playfield left_slingshot 0.5 28.0 0.5
+	'TODO
+	'LOOP_SPRITE_ANIMATION left_slingshot_sprite 0 0 3 30.0 1
+BREAK
+'TODO account for case where game is tilted before playfield validation
+COLLISION center_bumper:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		PLAY_SOUND solenoid 48
+		BUMPER_ACTION playfield center_bumper 0.15 16.0
+		SET_INTEGER score_pending 10
+		GOSUB score_routine
+		GOSUB strobe_EB_lights
+	ENDIF
+BREAK
+COLLISION bumper_3:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		PLAY_SOUND solenoid 48
+		BUMPER_ACTION playfield bumper_3 0.15 16.0
+		SET_INTEGER score_pending 10
+		GOSUB score_routine
+		GOSUB strobe_EB_lights
+	ENDIF
+BREAK
+COLLISION bumper_4:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		PLAY_SOUND solenoid 48
+		BUMPER_ACTION playfield bumper_4 0.15 16.0
+		SET_INTEGER score_pending 10
+		GOSUB score_routine
+		GOSUB strobe_EB_lights
+	ENDIF
+BREAK
+'TODO drop target memory, raise targets routine
+'TODO balance scoring
+'TODO rules for clearing bank/resetting targets
+'TODO sounds for drop targets falling and being reset
+LABEL write_target_memory
+	'Arguments: temp_int = target index, temp_int_2 = state
+	'Note: side effect sets temp_int to 0
+	GET_ARRAY_ELEMENT target_memory player temp_int_3
+	IF temp_int_2
+		SET_INTEGER temp_int_4 1
+		WHILE temp_int
+			MULTIPLY temp_int_4 2 temp_int_4
+			SUBTRACT temp_int 1 temp_int
+		WEND
+		BITWISE_OR temp_int_3 temp_int_4 temp_int_3
+	ELSE
+		SET_INTEGER temp_int_4 1
+		WHILE temp_int
+			MULTIPLY temp_int_4 2 temp_int_4
+			SUBTRACT temp_int 1 temp_int
+		WEND
+		BITWISE_NOT temp_int_4 temp_int_4
+		BITWISE_AND temp_int_4 255 temp_int_4
+		BITWISE_AND temp_int_3 temp_int_4 temp_int_3
+	ENDIF
+	SET_ARRAY_ELEMENT target_memory player temp_int_3
+RETURN
+LABEL recall_targets
+	'TODO SFX
+	'TODO test thoroughly and verify script
+	GET_ARRAY_ELEMENT target_memory player temp_int
+
+	BITWISE_AND temp_int 1 temp_int_2
+	IF temp_int_2
+		TANGIBLE left_drop_target_1 TRUE
+		SET_SPRITE_FRAME left_drop_target_1_sprite 1
+	ELSE
+		TANGIBLE left_drop_target_1 FALSE
+		SET_SPRITE_FRAME left_drop_target_1_sprite 0
+	ENDIF
+
+	BITWISE_AND temp_int 2 temp_int_2
+	IF temp_int_2
+		TANGIBLE left_drop_target_2 TRUE
+		SET_SPRITE_FRAME left_drop_target_2_sprite 1
+	ELSE
+		TANGIBLE left_drop_target_2 FALSE
+		SET_SPRITE_FRAME left_drop_target_2_sprite 0
+	ENDIF
+
+	BITWISE_AND temp_int 4 temp_int_2
+	IF temp_int_2
+		TANGIBLE left_drop_target_3 TRUE
+		SET_SPRITE_FRAME left_drop_target_3_sprite 1
+	ELSE
+		TANGIBLE left_drop_target_3 FALSE
+		SET_SPRITE_FRAME left_drop_target_3_sprite 0
+	ENDIF
+
+	BITWISE_AND temp_int 8 temp_int_2
+	IF temp_int_2
+		TANGIBLE right_drop_target_1 TRUE
+		SET_SPRITE_FRAME right_drop_target_1_sprite 1
+	ELSE
+		TANGIBLE right_drop_target_1 FALSE
+		SET_SPRITE_FRAME right_drop_target_1_sprite 0
+	ENDIF
+
+	BITWISE_AND temp_int 16 temp_int_2
+	IF temp_int_2
+		TANGIBLE right_drop_target_2 TRUE
+		SET_SPRITE_FRAME right_drop_target_2_sprite 1
+	ELSE
+		TANGIBLE right_drop_target_2 FALSE
+		SET_SPRITE_FRAME right_drop_target_2_sprite 0
+	ENDIF
+
+	BITWISE_AND temp_int 32 temp_int_2
+	IF temp_int_2
+		TANGIBLE right_drop_target_3 TRUE
+		SET_SPRITE_FRAME right_drop_target_3_sprite 1
+	ELSE
+		TANGIBLE right_drop_target_3 FALSE
+		SET_SPRITE_FRAME right_drop_target_3_sprite 0
+	ENDIF
+
+	BITWISE_AND temp_int 64 temp_int_2
+	IF temp_int_2
+		TANGIBLE right_drop_target_4 TRUE
+		SET_SPRITE_FRAME right_drop_target_4_sprite 1
+	ELSE
+		TANGIBLE right_drop_target_4 FALSE
+		SET_SPRITE_FRAME right_drop_target_4_sprite 0
+	ENDIF
+
+	BITWISE_AND temp_int 128 temp_int_2
+	IF temp_int_2
+		TANGIBLE right_drop_target_5 TRUE
+		SET_SPRITE_FRAME right_drop_target_5_sprite 1
+	ELSE
+		TANGIBLE right_drop_target_5 FALSE
+		SET_SPRITE_FRAME right_drop_target_5_sprite 0
+	ENDIF
+RETURN
+COLLISION left_drop_target_1:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		SET_INTEGER temp_int 0
+		SET_INTEGER temp_int_2 0
+		GOSUB write_target_memory
+		EQUAL arrow_lit 1 temp_int
+		IF temp_int
+			ADD eject_reward 1 eject_reward
+			GOSUB update_eject_lights
+			SET_INTEGER score_pending 1000
+			GOSUB score_routine
+		ELSE
+			SET_INTEGER score_pending 100
+			GOSUB score_routine
+		ENDIF
+		GOSUB check_left_bank
+	ENDIF
+	TANGIBLE left_drop_target_1 FALSE
+	SET_SPRITE_FRAME left_drop_target_1_sprite 0
+	PLAY_SOUND drop_target 32
+	GOSUB add_bonus
+BREAK
+COLLISION left_drop_target_2:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		SET_INTEGER temp_int 1
+		SET_INTEGER temp_int_2 0
+		GOSUB write_target_memory
+		EQUAL arrow_lit 2 temp_int
+		IF temp_int
+			ADD eject_reward 1 eject_reward
+			GOSUB update_eject_lights
+			SET_INTEGER score_pending 1000
+			GOSUB score_routine
+		ELSE
+			SET_INTEGER score_pending 100
+			GOSUB score_routine
+		ENDIF
+		GOSUB check_left_bank
+	ENDIF
+	TANGIBLE left_drop_target_2 FALSE
+	SET_SPRITE_FRAME left_drop_target_2_sprite 0
+	PLAY_SOUND drop_target 32
+	GOSUB add_bonus
+BREAK
+COLLISION left_drop_target_3:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		SET_INTEGER temp_int 2
+		SET_INTEGER temp_int_2 0
+		GOSUB write_target_memory
+		EQUAL arrow_lit 3 temp_int
+		IF temp_int
+			ADD eject_reward 1 eject_reward
+			GOSUB update_eject_lights
+			SET_INTEGER score_pending 1000
+			GOSUB score_routine
+		ELSE
+			SET_INTEGER score_pending 100
+			GOSUB score_routine
+		ENDIF
+		GOSUB check_left_bank
+	ENDIF
+	TANGIBLE left_drop_target_3 FALSE
+	SET_SPRITE_FRAME left_drop_target_3_sprite 0
+	PLAY_SOUND drop_target 32
+	GOSUB add_bonus
+BREAK
+LABEL check_left_bank
+	GET_ARRAY_ELEMENT target_memory player temp_int
+	BITWISE_AND temp_int 7 temp_int
+	NOT temp_int temp_int
+	IF temp_int
+		'TODO additional score?
+		GET_ARRAY_ELEMENT target_memory player temp_int
+		BITWISE_OR temp_int 7 temp_int
+		SET_ARRAY_ELEMENT target_memory player temp_int
+		SET_INTEGER hook_shot TRUE
+		TIMER_TO_DOUBLE hook_shot_timer temp_double
+		D_EQUAL temp_double 0.0 temp_int
+		IF temp_int
+			SET_SPRITE_FRAME hook_shot_light 1
+		ENDIF
+		START_TIMER left_bank_reset_timer 0.15
+	ENDIF
+RETURN
+TIMER_DONE left_bank_reset_timer:
+	'Note: If ball overlaps targets during reset, the ball clips away and the targets fall immediately (assuming the ball has enough speed to knock them down). While undesirable, this is both unlikely and apparently harmless. If needed, a switch can be used instead of this timer to detect when the ball has moved away from the targets.
+	'TODO SFX
+	TANGIBLE left_drop_target_1 TRUE
+	SET_SPRITE_FRAME left_drop_target_1_sprite 1
+	TANGIBLE left_drop_target_2 TRUE
+	SET_SPRITE_FRAME left_drop_target_2_sprite 1
+	TANGIBLE left_drop_target_3 TRUE
+	SET_SPRITE_FRAME left_drop_target_3_sprite 1
+BREAK
+LABEL advance_strike_light
+	GET_ARRAY_ELEMENT strike_light player temp_int
+	SET_INTEGER temp_int_3 0
+	ADD temp_int 1 temp_int
+	GREATER temp_int 5 temp_int_2
+	IF temp_int_2
+		SET_INTEGER temp_int 1
+		SET_INTEGER temp_int_3 1
+	ENDIF
+	SET_ARRAY_ELEMENT strike_light player temp_int
+	GOSUB update_strike_lights
+	IF temp_int_3
+		GOSUB add_bonus
+	ENDIF
+RETURN
+LABEL update_strike_lights
+	GET_ARRAY_ELEMENT strike_light player temp_int_2
+	EQUAL temp_int_2 1 temp_int
+	SET_SPRITE_FRAME white_light_1_sprite temp_int
+	EQUAL temp_int_2 2 temp_int
+	SET_SPRITE_FRAME white_light_2_sprite temp_int
+	EQUAL temp_int_2 3 temp_int
+	SET_SPRITE_FRAME white_light_3_sprite temp_int
+	EQUAL temp_int_2 4 temp_int
+	SET_SPRITE_FRAME white_light_4_sprite temp_int
+	EQUAL temp_int_2 5 temp_int
+	SET_SPRITE_FRAME white_light_5_sprite temp_int
+RETURN
+LABEL update_arrow_lights
+	'TODO respect FLASHING_LIGHTS setting
+	STOP_SPRITE_ANIMATION arrow_light_1
+	STOP_SPRITE_ANIMATION arrow_light_2
+	STOP_SPRITE_ANIMATION arrow_light_3
+	SET_SPRITE_FRAME arrow_light_1 0
+	SET_SPRITE_FRAME arrow_light_2 0
+	SET_SPRITE_FRAME arrow_light_3 0
+	EQUAL arrow_lit 1 temp_int
+	IF temp_int
+		LOOP_SPRITE_ANIMATION arrow_light_1 0 0 2 8.0 8
+	ENDIF
+	EQUAL arrow_lit 2 temp_int
+	IF temp_int
+		LOOP_SPRITE_ANIMATION arrow_light_2 0 0 2 8.0 8
+	ENDIF
+	EQUAL arrow_lit 3 temp_int
+	IF temp_int
+		LOOP_SPRITE_ANIMATION arrow_light_3 0 0 2 8.0 8
+	ENDIF
+RETURN
+LABEL update_eject_lights
+	EQUAL eject_reward 1 temp_int
+	SET_SPRITE_FRAME eject_10k_light temp_int
+	EQUAL eject_reward 2 temp_int
+	SET_SPRITE_FRAME eject_30k_light temp_int
+	EQUAL eject_reward 3 temp_int
+	SET_SPRITE_FRAME eject_50k_light temp_int
+	GREATER eject_reward 3 temp_int
+	SET_SPRITE_FRAME bonus_collect_light temp_int
+RETURN
+LABEL advance_bowling_reward
+	ADD bowling_reward 1 bowling_reward
+	EQUAL bowling_reward 3 temp_int
+	IF temp_int
+		SET_INTEGER extra_ball_lit 1
+		GOSUB update_EB_lights
+	ENDIF
+	GREATER bowling_reward 3 temp_int
+	IF temp_int
+		SET_INTEGER special_lit TRUE
+		SET_SPRITE_FRAME standup_target_light 1
+	ENDIF
+	GOSUB update_bowling_lights
+RETURN
+LABEL update_bowling_lights
+	EQUAL bowling_reward 1 temp_int
+	SET_SPRITE_FRAME bowling_2x_light temp_int
+	GREATER bowling_reward 1 temp_int
+	SET_SPRITE_FRAME bowling_3x_light temp_int
+RETURN
+LABEL get_bowling_multiplier
+	'returns through temp_int
+	SET_INTEGER temp_int 1
+	GREATER bowling_reward 0 temp_int_2
+	ADD temp_int temp_int_2 temp_int
+	GREATER bowling_reward 1 temp_int_2
+	ADD temp_int temp_int_2 temp_int
+RETURN
+LABEL strobe_EB_lights
+	IF extra_ball_lit
+		SUBTRACT 3 extra_ball_lit extra_ball_lit
+		GOSUB update_EB_lights
+	ENDIF
+RETURN
+LABEL update_EB_lights
+	EQUAL extra_ball_lit 1 temp_int
+	SET_SPRITE_FRAME left_EB_light temp_int
+	EQUAL extra_ball_lit 2 temp_int
+	SET_SPRITE_FRAME right_EB_light temp_int
+RETURN
+TIMER_DONE arrow_timer:
+	IF arrow_lit
+		ADD arrow_lit 1 arrow_lit
+		EQUAL arrow_lit 4 temp_int
+		IF temp_int
+			SET_INTEGER arrow_lit 1
+		ENDIF
+		GOSUB update_arrow_lights
+		START_TIMER arrow_timer 2.0
+	ENDIF
+BREAK
+COLLISION right_drop_target_1:
+	NOT tilt temp_int
+		IF temp_int
+		GET_ARRAY_ELEMENT strike_light player temp_int
+		EQUAL temp_int 1 temp_int
+		IF temp_int
+			GOSUB strike_routine
+		ELSE
+			GOSUB get_bowling_multiplier
+			MULTIPLY temp_int 100 score_pending
+			GOSUB score_routine
+			SET_INTEGER temp_int 3
+			SET_INTEGER temp_int_2 0
+			GOSUB write_target_memory
+			GOSUB check_right_bank
+		ENDIF
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+	ENDIF
+	TANGIBLE right_drop_target_1 FALSE
+	SET_SPRITE_FRAME right_drop_target_1_sprite 0
+	PLAY_SOUND drop_target 32
+	GOSUB add_bonus
+BREAK
+COLLISION right_drop_target_2:
+	NOT tilt temp_int
+	IF temp_int
+		GET_ARRAY_ELEMENT strike_light player temp_int
+		EQUAL temp_int 2 temp_int
+		IF temp_int
+			GOSUB strike_routine
+		ELSE
+			GOSUB get_bowling_multiplier
+			MULTIPLY temp_int 100 score_pending
+			GOSUB score_routine
+			SET_INTEGER temp_int 4
+			SET_INTEGER temp_int_2 0
+			GOSUB write_target_memory
+			GOSUB check_right_bank
+		ENDIF
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+	ENDIF
+	TANGIBLE right_drop_target_2 FALSE
+	SET_SPRITE_FRAME right_drop_target_2_sprite 0
+	PLAY_SOUND drop_target 32
+	GOSUB add_bonus
+BREAK
+COLLISION right_drop_target_3:
+	NOT tilt temp_int
+	IF temp_int
+		GET_ARRAY_ELEMENT strike_light player temp_int
+		EQUAL temp_int 3 temp_int
+		IF temp_int
+			GOSUB strike_routine
+		ELSE
+			GOSUB get_bowling_multiplier
+			MULTIPLY temp_int 100 score_pending
+			GOSUB score_routine
+			SET_INTEGER temp_int 5
+			SET_INTEGER temp_int_2 0
+			GOSUB write_target_memory
+			GOSUB check_right_bank
+		ENDIF
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+	ENDIF
+	TANGIBLE right_drop_target_3 FALSE
+	SET_SPRITE_FRAME right_drop_target_3_sprite 0
+	PLAY_SOUND drop_target 32
+	GOSUB add_bonus
+BREAK
+COLLISION right_drop_target_4:
+	NOT tilt temp_int
+	IF temp_int
+		GET_ARRAY_ELEMENT strike_light player temp_int
+		EQUAL temp_int 4 temp_int
+		IF temp_int
+			GOSUB strike_routine
+		ELSE
+			GOSUB get_bowling_multiplier
+			MULTIPLY temp_int 100 score_pending
+			GOSUB score_routine
+			SET_INTEGER temp_int 6
+			SET_INTEGER temp_int_2 0
+			GOSUB write_target_memory
+			GOSUB check_right_bank
+		ENDIF
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+	ENDIF
+	TANGIBLE right_drop_target_4 FALSE
+	SET_SPRITE_FRAME right_drop_target_4_sprite 0
+	PLAY_SOUND drop_target 32
+	GOSUB add_bonus
+BREAK
+COLLISION right_drop_target_5:
+	NOT tilt temp_int
+	IF temp_int
+		GET_ARRAY_ELEMENT strike_light player temp_int
+		EQUAL temp_int 5 temp_int
+		IF temp_int
+			GOSUB strike_routine
+		ELSE
+			GOSUB get_bowling_multiplier
+			MULTIPLY temp_int 100 score_pending
+			GOSUB score_routine
+			SET_INTEGER temp_int 7
+			SET_INTEGER temp_int_2 0
+			GOSUB write_target_memory
+			GOSUB check_right_bank
+		ENDIF
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+	ENDIF
+	TANGIBLE right_drop_target_5 FALSE
+	SET_SPRITE_FRAME right_drop_target_5_sprite 0
+	PLAY_SOUND drop_target 32
+	GOSUB add_bonus
+BREAK
+LABEL check_right_bank
+	GET_ARRAY_ELEMENT target_memory player temp_int
+	BITWISE_AND temp_int 248 temp_int
+	NOT temp_int temp_int
+	IF temp_int
+		'TODO additional score? (apply bowling multiplier)
+		GET_ARRAY_ELEMENT target_memory player temp_int
+		BITWISE_OR temp_int 248 temp_int
+		SET_ARRAY_ELEMENT target_memory player temp_int
+		SET_INTEGER right_bank_waiting TRUE
+		GOSUB advance_bonus_multiplier
+	ENDIF
+RETURN
+SWITCH_DOWN left_orbit_switch:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		IF right_bank_waiting
+			SET_INTEGER right_bank_waiting FALSE
+			'TODO SFX
+			TANGIBLE right_drop_target_1 TRUE
+			SET_SPRITE_FRAME right_drop_target_1_sprite 1
+			TANGIBLE right_drop_target_2 TRUE
+			SET_SPRITE_FRAME right_drop_target_2_sprite 1
+			TANGIBLE right_drop_target_3 TRUE
+			SET_SPRITE_FRAME right_drop_target_3_sprite 1
+			TANGIBLE right_drop_target_4 TRUE
+			SET_SPRITE_FRAME right_drop_target_4_sprite 1
+			TANGIBLE right_drop_target_5 TRUE
+			SET_SPRITE_FRAME right_drop_target_5_sprite 1
+		ENDIF
+	ENDIF
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+LABEL strike_routine
+	'drop all targets
+	TANGIBLE right_drop_target_1 FALSE
+	SET_SPRITE_FRAME right_drop_target_1_sprite 0
+	TANGIBLE right_drop_target_2 FALSE
+	SET_SPRITE_FRAME right_drop_target_2_sprite 0
+	TANGIBLE right_drop_target_3 FALSE
+	SET_SPRITE_FRAME right_drop_target_3_sprite 0
+	TANGIBLE right_drop_target_4 FALSE
+	SET_SPRITE_FRAME right_drop_target_4_sprite 0
+	TANGIBLE right_drop_target_5 FALSE
+	SET_SPRITE_FRAME right_drop_target_5_sprite 0
+
+	'detect strike vs. spare
+	GET_ARRAY_ELEMENT target_memory player temp_int
+	BITWISE_AND temp_int 248 temp_int
+	EQUAL temp_int 248 temp_int
+	IF temp_int
+		GOSUB get_bowling_multiplier
+		MULTIPLY temp_int 20000 score_pending
+		GOSUB score_routine
+		GOSUB advance_bonus_multiplier
+		GOSUB advance_bowling_reward
+		'Makes 5 bonus with default 1 from target
+		GOSUB add_bonus
+		GOSUB add_bonus
+		GOSUB add_bonus
+		GOSUB add_bonus
+	ELSE
+		GOSUB get_bowling_multiplier
+		MULTIPLY temp_int 10000 score_pending
+		GOSUB score_routine
+		'Spare can't light extra ball or special
+		GOSUB get_bowling_multiplier
+		LESS temp_int 3 temp_int
+		IF temp_int
+			GOSUB advance_bowling_reward
+		ENDIF
+		GOSUB advance_bonus_multiplier
+		'No extra bonus for spare
+		'TODO bonus for remaining targets?
+	ENDIF
+
+	'TODO light show
+
+	'update target memory
+	GET_ARRAY_ELEMENT target_memory player temp_int
+	'sets to all 5-bank targets down
+	'BITWISE_AND temp_int 7 temp_int
+	'sets to all 5-bank targets standing, causing bank to reset if ball is lost
+	BITWISE_OR temp_int 248 temp_int
+	SET_ARRAY_ELEMENT target_memory player temp_int
+
+	SET_INTEGER right_bank_waiting TRUE
+	
+	'unlight strike
+	SET_ARRAY_ELEMENT strike_light player 0
+	GOSUB update_strike_lights
+	'TODO SFX
+RETURN
+COLLISION standup_target:
+	NOT tilt temp_int
+	IF temp_int
+		IF playfield_validated
+			SET_INTEGER score_pending 100
+		ELSE
+			'skillshot
+			SET_INTEGER playfield_validated TRUE
+			SET_INTEGER score_pending 1000
+			GOSUB advance_bonus_multiplier
+			'TODO light show?
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		NOT spinner_ripping temp_int
+		IF temp_int
+			SET_INTEGER spinner_lit TRUE
+			SET_SPRITE_FRAME spinner_light 1
+		ENDIF
+		IF special_lit
+			'TODO knocker SFX
+			GOSUB add_credit
+			SET_INTEGER special_lit FALSE
+			SET_SPRITE_FRAME standup_target_light 0
+		ENDIF
+	ENDIF
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+SPIN_CW:
+SPIN_CCW:
+	IF trough_hole_occupied
+		BREAK
+	ENDIF
+	NOT tilt temp_int
+	IF temp_int
+		'Note: spinner cannot validate playfield in case it remains spinning after drain
+		GOSUB advance_strike_light
+	ENDIF
+	SET_INTEGER score_pending 10
+	OR spinner_lit spinner_ripping temp_int
+	IF temp_int
+		IF spinner_lit
+			SET_INTEGER spinner_lit FALSE
+			SET_INTEGER spinner_ripping TRUE
+			'TODO respect FLASHING_LIGHTS setting
+			'TODO research blinking frequency
+			LOOP_SPRITE_ANIMATION spinner_light 0 0 2 30.0 -1
+		ENDIF
+		'Advance strike light twice as fast for more bonus
+		GOSUB advance_strike_light
+		START_TIMER spinner_timer 1.0
+		SET_INTEGER score_pending 100
+	ENDIF
+	GOSUB score_routine
+BREAK
+TIMER_DONE spinner_timer:
+	SET_INTEGER spinner_ripping FALSE
+	STOP_SPRITE_ANIMATION spinner_light
+BREAK
+'TODO rollover rules
+'TODO attract mode light show
+SWITCH_DOWN upper_rollover_1:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		SET_ARRAY_ELEMENT upper_rollovers 0 TRUE
+		GOSUB update_upper_rollovers
+		GOSUB check_upper_rollovers
+	ENDIF
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+SWITCH_DOWN upper_rollover_2:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		SET_ARRAY_ELEMENT upper_rollovers 1 TRUE
+		GOSUB update_upper_rollovers
+		GOSUB check_upper_rollovers
+	ENDIF
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+SWITCH_DOWN upper_rollover_3:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		SET_ARRAY_ELEMENT upper_rollovers 2 TRUE
+		GOSUB update_upper_rollovers
+		GOSUB check_upper_rollovers
+	ENDIF
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+LABEL update_upper_rollovers
+	GET_ARRAY_ELEMENT upper_rollovers 0 temp_int
+	SET_SPRITE_FRAME rollover_1_light temp_int
+	GET_ARRAY_ELEMENT upper_rollovers 1 temp_int
+	SET_SPRITE_FRAME rollover_2_light temp_int
+	GET_ARRAY_ELEMENT upper_rollovers 2 temp_int
+	SET_SPRITE_FRAME rollover_3_light temp_int
+RETURN
+LABEL check_upper_rollovers
+	GET_ARRAY_ELEMENT upper_rollovers 0 temp_int
+	GET_ARRAY_ELEMENT upper_rollovers 1 temp_int_2
+	AND temp_int temp_int_2 temp_int
+	GET_ARRAY_ELEMENT upper_rollovers 2 temp_int_2
+	AND temp_int temp_int_2 temp_int
+	IF temp_int
+		GOSUB advance_bonus_multiplier
+		CLEAR_ARRAY upper_rollovers 0
+		'TODO light show
+		'TODO timer to suppress updates until end of light show
+		'TODO extra points?
+		GOSUB update_upper_rollovers
+	ENDIF
+RETURN
+SWITCH_DOWN left_outlane_rollover:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		EQUAL extra_ball_lit 1 temp_int
+		IF temp_int
+			SET_INTEGER extra_ball TRUE
+			SET_INTEGER extra_ball_lit 0
+			GOSUB update_EB_lights
+			'TODO light all shoot again lights
+		ENDIF
+	ENDIF
+	SET_INTEGER score_pending 1000
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+SWITCH_DOWN left_inlane_rollover:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+	ENDIF
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+SWITCH_DOWN right_inlane_rollover:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+		EQUAL extra_ball_lit 2 temp_int
+		IF temp_int
+			SET_INTEGER extra_ball TRUE
+			SET_INTEGER extra_ball_lit 0
+			GOSUB update_EB_lights
+			'TODO light all shoot again lights
+		ENDIF
+	ENDIF
+	SET_INTEGER score_pending 1000
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+SWITCH_DOWN right_outlane_rollover:
+	'crossover lane
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+	ENDIF
+	SET_INTEGER score_pending 100
+	GOSUB score_routine
+	GOSUB add_bonus
+BREAK
+COLLISION eject_hole:
+	NOT tilt temp_int
+	IF temp_int
+		NOT playfield_validated temp_int
+		IF temp_int
+			SET_INTEGER playfield_validated TRUE
+			STOP_SPRITE_ANIMATION standup_target_light
+		ENDIF
+	ENDIF
+	NOT eject_hole_occupied temp_int
+	IF temp_int
+		SET_INTEGER eject_hole_occupied TRUE
+		GREATER eject_reward 3 temp_int
+		IF temp_int
+			SET_INTEGER temp_bonus bonus
+			START_TIMER bonus_collect_timer 0.25
+		ELSE
+			SET_INTEGER score_pending 0
+			EQUAL eject_reward 1 temp_int
+			IF temp_int
+				SET_INTEGER score_pending 1000
+			ENDIF
+			EQUAL eject_reward 2 temp_int
+			IF temp_int
+				SET_INTEGER score_pending 3000
+			ENDIF
+			GREATER eject_reward 2 temp_int
+			IF temp_int
+				SET_INTEGER score_pending 5000
+			ENDIF
+			GOSUB score_routine
+			START_TIMER eject_count_timer 0.75
+		ENDIF
+	ENDIF
+BREAK
+TIMER_DONE bonus_collect_timer:
+	IF tilt
+		START_TIMER eject_count_timer 0.75
+		BREAK
+	ENDIF
+	IF temp_bonus
+		SUBTRACT temp_bonus 1 temp_bonus
+		GOSUB update_bonus_ladder
+		SET_INTEGER temp_int 100
+		MULTIPLY temp_int bonus_multiplier temp_int
+		SET_INTEGER score_pending temp_int
+		GOSUB score_routine
+		START_TIMER bonus_collect_timer 0.25
+	ELSE
+		SET_INTEGER eject_reward 3 'TODO balance
+		GOSUB update_eject_lights
+		SET_INTEGER score_pending 500 'TODO (after balancing) ensure this score corresponds to above reward level
+		GOSUB score_routine
+		START_TIMER eject_count_timer 0.75
+	ENDIF
+BREAK
+TIMER_DONE eject_count_timer:
+	GOSUB eject_routine
+BREAK
+LABEL eject_routine
+	TANGIBLE eject_hole FALSE
+	MAGNET_POWER eject_hole_magnet 0.0
+	PLAY_SOUND kickout 24
+	'TODO adjust kickout vector
+	KICKOUT_ACTION playfield 18.22 8.62 playfield -8.55050358 23.4923155
+	SET_INTEGER eject_hole_occupied FALSE
+	START_TIMER eject_timer 0.25
+RETURN
+TIMER_DONE eject_timer:
+	TANGIBLE eject_hole TRUE
+	MAGNET_POWER eject_hole_magnet 96.5225
+BREAK
+COLLISION passive_slingshot_1:
+COLLISION passive_slingshot_2:
+COLLISION passive_slingshot_3:
+COLLISION passive_slingshot_4:
+COLLISION passive_slingshot_5:
+COLLISION passive_slingshot_6:
+COLLISION passive_slingshot_7:
+	'TODO set sensitivity
+	SET_INTEGER score_pending 1
+	GOSUB score_routine
+	GOSUB strobe_EB_lights
+BREAK
+LABEL score_routine
+	NOT ball_in_play temp_int
+	OR temp_int tilt temp_int
+	IF temp_int
+		RETURN
+	ENDIF
+	START_TIMER score_timer 2.0
+	PAUSE_TIMER score_blink_timer
+	GET_ARRAY_ELEMENT score player temp_int
+	SET_INTEGER temp_int_2 replay_score
+	LESS temp_int_2 temp_int temp_int_3
+	WHILE temp_int_3
+		ADD temp_int_2 100000 temp_int_2
+		LESS temp_int_2 temp_int temp_int_3
+	WEND
+	ADD temp_int score_pending temp_int_3
+	LESS temp_int_3 temp_int_2 temp_int_3
+	NOT temp_int_3 temp_int_3
+	IF temp_int_3
+		PLAY_SOUND knocker 64
+		GOSUB add_credit
+	ENDIF
+	GET_ARRAY_ELEMENT score player temp_int
+	ADD temp_int score_pending temp_int
+	SET_ARRAY_ELEMENT score player temp_int
+	GET_ARRAY_ELEMENT score_displays player temp_int_2
+	AND_CLEAR temp_int_2 FALSE
+	AND_SHOW_NUMBER temp_int_2 temp_int 7 ALIGN_RIGHT 0 FALSE TRUE
+RETURN
+LABEL add_bonus
+	LESS bonus 49 temp_int 'Max bonus value of Paragon (1979) and Black Knight (1980)
+	NOT tilt temp_int_2
+	AND temp_int temp_int_2 temp_int
+	IF temp_int
+		ADD bonus 1 bonus
+		GOSUB update_bonus_ladder
+	ENDIF
+	'Super Bonus memory
+	EQUAL bonus 20 temp_int
+	IF temp_int
+		SET_ARRAY_ELEMENT super_bonus_memory player 20
+	ENDIF
+	EQUAL bonus 30 temp_int
+	IF temp_int
+		SET_ARRAY_ELEMENT super_bonus_memory player 30
+	ENDIF
+	EQUAL bonus 40 temp_int
+	IF temp_int
+		SET_ARRAY_ELEMENT super_bonus_memory player 40
+	ENDIF
+RETURN
+LABEL update_bonus_ladder
+	SET_INTEGER temp_int 10
+	IF temp_bonus
+		SET_INTEGER temp_int_2 temp_bonus
+	ELSE
+		SET_INTEGER temp_int_2 bonus
+	ENDIF
+	GREATER temp_int_2 39 temp_int_3
+	SET_SPRITE_FRAME bonus_40_light temp_int_3
+	IF temp_int_3
+		SUBTRACT temp_int_2 40 temp_int_2
+	ENDIF
+	GREATER temp_int_2 29 temp_int_3
+	SET_SPRITE_FRAME bonus_30_light temp_int_3
+	IF temp_int_3
+		SUBTRACT temp_int_2 30 temp_int_2
+	ENDIF
+	GREATER temp_int_2 19 temp_int_3
+	SET_SPRITE_FRAME bonus_20_light temp_int_3
+	IF temp_int_3
+		SUBTRACT temp_int_2 20 temp_int_2
+	ENDIF
+	WHILE temp_int
+		GREATER temp_int temp_int_2 temp_int_3
+		NOT temp_int_3 temp_int_3
+		ADD bonus_1_light temp_int temp_int_4
+		SUBTRACT temp_int_4 1 temp_int_4 'obtain index of light
+		IF temp_int_3
+			SUBTRACT temp_int_2 temp_int temp_int_2
+			SET_SPRITE_FRAME temp_int_4 1
+		ELSE
+			SET_SPRITE_FRAME temp_int_4 0
+		ENDIF
+		SUBTRACT temp_int 1 temp_int
+	WEND
+RETURN
+LABEL advance_bonus_multiplier
+	LESS bonus_multiplier 5 temp_int
+	NOT tilt temp_int_2
+	AND temp_int temp_int_2 temp_int
+	IF temp_int
+		ADD bonus_multiplier 1 bonus_multiplier
+		GOSUB update_bonus_multiplier
+	ENDIF
+RETURN
+LABEL update_bonus_multiplier
+	EQUAL bonus_multiplier 5 temp_int
+	SET_SPRITE_FRAME bonus_5x_light temp_int
+	EQUAL bonus_multiplier 4 temp_int
+	SET_SPRITE_FRAME bonus_4x_light temp_int
+	EQUAL bonus_multiplier 3 temp_int
+	SET_SPRITE_FRAME bonus_3x_light temp_int
+	EQUAL bonus_multiplier 2 temp_int
+	SET_SPRITE_FRAME bonus_2x_light temp_int
+RETURN
+LABEL add_credit
+	LESS credits 20 temp_int
+	IF temp_int
+		ADD credits 1 credits
+		GOSUB update_credit_display
+	ENDIF
+RETURN
+LABEL update_credit_display
+	AND_CLEAR credit_display FALSE
+	AND_SHOW_NUMBER credit_display credits 2 ALIGN_RIGHT 0 FALSE FALSE
+RETURN
