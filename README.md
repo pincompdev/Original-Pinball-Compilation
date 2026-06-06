@@ -64,9 +64,9 @@ Table rules (Saturn Strikes):
 - Hit lit 5-bank target to advance bowling multiplier and bonus multiplier and score 200k for Strike or 100k for Spare (subject to bowling multiplier)
 - Completing 5-bank without hitting lit target only advances bonus multiplier
 - Complete 1-2-3 to advance bonus multiplier (lane change on right flipper)
-- Left secondary button activates outlane saver magnet when lit
+- Left secondary button activates Hook Shot outlane saver magnet when lit
 - Standup target lights spinner for 10x score and double bonus on next rip
-- Skillshot on standup target scores 10k
+- Skillshot on standup target scores 10k and advances bonus multiplier
 - Hit strobing 3-bank target to advance eject hole reward (10k, 30k, 50k, collect bonus) and score 10k
 - Complete 3-bank to relight Hook Shot
 - Strike with 3x bowling multiplier lights extra ball on outlanes, then special on standup target
