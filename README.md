@@ -1,6 +1,6 @@
 Original Pinball Compilation
 
-This project is planned to contain multiple pinball tables. As of this writing, only one is available. It is incomplete, but playable.
+This project is planned to contain multiple pinball tables. As of this writing, two are available. One is complete; the other is incomplete, but playable.
 
 Build (macOS)
 
@@ -32,7 +32,11 @@ Coin - V
 
 Left Flipper - F
 
+Left Secondary - G
+
 Right Flipper - J
+
+Right Secondary - H (currently unused)
 
 Plunger - M
 
